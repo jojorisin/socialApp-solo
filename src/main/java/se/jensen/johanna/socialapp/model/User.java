@@ -40,11 +40,12 @@ public class User {
     private String profileImagePath;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("createdAt DESC")
     private List<Post> posts = new ArrayList<>();
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Comment> comments = new ArrayList<>();
 
     @OneToMany(mappedBy = "sender")
-    private List<Friendship> friendships;
+    private List<Friendship> friendships = new ArrayList<>();
 }

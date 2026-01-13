@@ -3,10 +3,8 @@ package se.jensen.johanna.socialapp.service;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import se.jensen.johanna.socialapp.dto.PostDTO;
-import se.jensen.johanna.socialapp.dto.PostListDTO;
 import se.jensen.johanna.socialapp.dto.PostRequest;
-import se.jensen.johanna.socialapp.dto.PostResponse;
+import se.jensen.johanna.socialapp.dto.PostResponseDTO;
 import se.jensen.johanna.socialapp.dto.admin.AdminUpdatePostRequest;
 import se.jensen.johanna.socialapp.dto.admin.AdminUpdatePostResponse;
 import se.jensen.johanna.socialapp.exception.ForbiddenException;
@@ -30,29 +28,30 @@ public class PostService {
     private final CommentMapper commentMapper;
 
 
-    public List<PostListDTO> findAllPosts() {
-        return postRepository.findAll().stream()
-                .map(postMapper::toPostList).toList();
+    //Returnerar lista ordnad med createdAt desc (senaste först)
+    public List<PostResponseDTO> findAllPosts() {
+        return postRepository.findAllByOrderByCreatedAtDesc().stream()
+                .map(postMapper::toPostResponseDTO).toList();
 
     }
 
-    public PostDTO findPost(Long postId) {
+    public PostResponseDTO findPost(Long postId) {
         Post post = postRepository.findById(postId)
                 .orElseThrow(NotFoundException::new);
 
-        return postMapper.toDTO(post, commentMapper);
+        return postMapper.toPostResponseDTO(post);
     }
 
-    public PostResponse addPost(PostRequest postRequest, String username) {
+    public PostResponseDTO addPost(PostRequest postRequest, String username) {
         User user = userRepository.findByUsername(username).orElseThrow(NotFoundException::new);
         Post post = postMapper.toPost(postRequest);
         post.setUser(user);
         postRepository.save(post);
-        return postMapper.toPostResponse(post);
+        return postMapper.toPostResponseDTO(post);
 
     }
 
-    public PostResponse updatePost(PostRequest postRequest, Long postId, String username) {
+    public PostResponseDTO updatePost(PostRequest postRequest, Long postId, String username) {
         Post post = postRepository.findById(postId).orElseThrow(NotFoundException::new);
         if (!post.getUser().getUsername().equals(username)) {
             throw new ForbiddenException("You are not authorized to edit this post");
@@ -61,7 +60,7 @@ public class PostService {
         postRepository.save(post);
 
 
-        return postMapper.toPostResponse(post);
+        return postMapper.toPostResponseDTO(post);
 
     }
 
