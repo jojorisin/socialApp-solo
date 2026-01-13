@@ -8,6 +8,6 @@ public record FriendResponseDTO(
         Long senderId,
         String senderUsername,
         Long receiverId,
-        Long receiverUsername
+        String receiverUsername
 ) {
 }
