@@ -1,6 +1,7 @@
 package se.jensen.johanna.socialapp.model;
 
 import jakarta.persistence.*;
+import java.time.LocalDateTime;
 
 @Entity
 public class Friendship {
@@ -16,4 +17,11 @@ public class Friendship {
     private User receiver;
 
     private FriendshipStatus status = FriendshipStatus.PENDING;
+
+    private LocalDateTime acceptedAt;
+
+    public void accept() {
+        this.status = FriendshipStatus.ACCEPTED;
+        this.acceptedAt = LocalDateTime.now();
+    }
 }
