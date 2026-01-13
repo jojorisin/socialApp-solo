@@ -51,4 +51,12 @@ public class FriendshipService {
     public List<Friendship> getFriendships(Long userId) {
         return friendshipRepository.findBySender_UserIdOrReceiver_UserId(userId, userId);
     }
+
+    public List<Friendship> getAcceptedFriendships(Long userId) {
+        return friendshipRepository.findFriendshipsByUserIdAndStatus(userId, FriendshipStatus.ACCEPTED);
+    }
+
+    public List<Friendship> getPendingFriendships(Long userId) {
+        return friendshipRepository.findFriendshipsByUserIdAndStatus(userId, FriendshipStatus.PENDING);
+    }
 }
