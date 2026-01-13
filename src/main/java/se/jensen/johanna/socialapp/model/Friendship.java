@@ -21,6 +21,7 @@ public class Friendship {
     @ManyToOne
     private User receiver;
 
+    @Enumerated(EnumType.STRING)
     private FriendshipStatus status = FriendshipStatus.PENDING;
 
     private LocalDateTime acceptedAt;
