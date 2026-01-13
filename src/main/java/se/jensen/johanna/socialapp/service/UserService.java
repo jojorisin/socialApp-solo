@@ -41,7 +41,6 @@ public class UserService {
     }
 
     public UpdateUserResponse updateUser(UpdateUserRequest userRequest, String username) {
-        // User user = userRepository.findById(userId).orElseThrow(NotFoundException::new);
         User user = userRepository.findByUsername(username).orElseThrow(NotFoundException::new);
         userMapper.updateUser(userRequest, user);
         userRepository.save(user);
@@ -74,7 +73,6 @@ public class UserService {
     }
 
     public void deleteUser(String username) {
-        //User userToDelete = userRepository.findById(userId).orElseThrow(NotFoundException::new);
         User userToDelete = userRepository.findByUsername(username).orElseThrow(NotFoundException::new);
         userRepository.delete(userToDelete);
     }
