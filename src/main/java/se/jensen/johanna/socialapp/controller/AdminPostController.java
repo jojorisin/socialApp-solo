@@ -19,9 +19,11 @@ public class AdminPostController {
 
 
     //ändra responsen kanske så den är anapssad till admin.
-    @GetMapping
-    public ResponseEntity<List<PostResponseDTO>> getAllPosts() {
-        List<PostResponseDTO> postResponseDTOS = postService.findAllPosts();
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/{postId}")
+    public ResponseEntity<PostResponseDTO> getPost(@PathVariable
+                                                   Long postId) {
+        PostResponseDTO postResponseDTOS = postService.findPost(postId);
 
         return ResponseEntity.ok(postResponseDTOS);
 
