@@ -14,6 +14,7 @@ import se.jensen.johanna.socialapp.dto.PostResponseDTO;
 import se.jensen.johanna.socialapp.dto.admin.AdminUpdatePostRequest;
 import se.jensen.johanna.socialapp.dto.admin.AdminUpdatePostResponse;
 import se.jensen.johanna.socialapp.service.PostService;
+import se.jensen.johanna.socialapp.util.JwtUtils;
 
 import java.util.List;
 
@@ -22,6 +23,8 @@ import java.util.List;
 @RequiredArgsConstructor
 public class PostController {
     private final PostService postService;
+
+    private final JwtUtils jwtUtils;
 
 
     @PreAuthorize("hasRole('ADMIN')")
@@ -73,7 +76,9 @@ public class PostController {
     public ResponseEntity<PostResponseDTO> post(@AuthenticationPrincipal
                                                 Jwt jwt,
                                                 @RequestBody @Valid PostRequest post) {
-        PostResponseDTO postResponse = postService.addPost(post, jwt.getSubject());
+        Long userId = jwtUtils.extractUserId(jwt);
+
+        PostResponseDTO postResponse = postService.addPost(post, userId);
         return ResponseEntity.status(HttpStatus.CREATED).body(postResponse);
 
     }
@@ -85,10 +90,12 @@ public class PostController {
                                                     @PathVariable Long postId,
                                                     @RequestBody @Valid PostRequest postRequest) {
 
+        Long userId = jwtUtils.extractUserId(jwt);
+
         PostResponseDTO postResponse = postService.updatePost(
                 postRequest,
                 postId,
-                jwt.getSubject());
+                userId);
 
         return ResponseEntity.ok(postResponse);
 
@@ -99,7 +106,9 @@ public class PostController {
     public ResponseEntity<Void> deletePost(@AuthenticationPrincipal
                                            Jwt jwt,
                                            @PathVariable Long postId) {
-        postService.deletePost(postId, jwt.getSubject());
+        Long userId = jwtUtils.extractUserId(jwt);
+
+        postService.deletePost(postId, userId);
 
         return ResponseEntity.noContent().build();
     }

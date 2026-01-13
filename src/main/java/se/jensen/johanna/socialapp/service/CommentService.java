@@ -29,9 +29,9 @@ public class CommentService {
 
 
     public CommentResponse postComment(Long postId,
-                                       String username,
+                                       Long userId,
                                        CommentRequest commentRequest) {
-        User user = userRepository.findByUsername(username).orElseThrow(NotFoundException::new);
+        User user = userRepository.findById(userId).orElseThrow(NotFoundException::new);
         Post post = postRepository.findById(postId).orElseThrow(NotFoundException::new);
         Comment comment = commentMapper.toComment(commentRequest);
         comment.setUser(user);
@@ -44,9 +44,9 @@ public class CommentService {
 
     public ReplyCommentResponse replyComment(Long postId,
                                              Long parentId,
-                                             String username,
+                                             Long userId,
                                              CommentRequest commentRequest) {
-        User user = userRepository.findByUsername(username).orElseThrow(NotFoundException::new);
+        User user = userRepository.findById(userId).orElseThrow(NotFoundException::new);
         Post post = postRepository.findById(postId).orElseThrow(NotFoundException::new);
         Comment parent = commentRepository.findById(parentId).orElseThrow(NotFoundException::new);
         Comment reply = commentMapper.toComment(commentRequest);
@@ -58,6 +58,7 @@ public class CommentService {
 
     }
 
+    //Returnerar inte post om inte de finns kommentar
     public List<CommentDTO> findAllMainComments(Long postId) {
         List<CommentDTO> commentDTOS =
                 commentRepository.findAllMainCommentsWithReplies(postId)

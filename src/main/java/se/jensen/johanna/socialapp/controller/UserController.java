@@ -11,6 +11,7 @@ import se.jensen.johanna.socialapp.dto.admin.AdminUpdateUserRequest;
 import se.jensen.johanna.socialapp.dto.admin.AdminUpdateUserResponse;
 import se.jensen.johanna.socialapp.dto.admin.AdminUserDTO;
 import se.jensen.johanna.socialapp.service.UserService;
+import se.jensen.johanna.socialapp.util.JwtUtils;
 
 import java.util.List;
 
@@ -19,6 +20,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class UserController {
     private final UserService userService;
+    private final JwtUtils jwtUtils;
 
     //OBS vilka är för admin vilka för user
 
@@ -98,8 +100,9 @@ public class UserController {
     @PutMapping("/me")
     public ResponseEntity<UpdateUserResponse> updateUser(@AuthenticationPrincipal Jwt jwt,
                                                          @RequestBody UpdateUserRequest userRequest) {
+        Long userId = jwtUtils.extractUserId(jwt);
 
-        UpdateUserResponse userResponse = userService.updateUser(userRequest, jwt.getSubject());
+        UpdateUserResponse userResponse = userService.updateUser(userRequest, userId);
         return ResponseEntity.ok(userResponse);
     }
 
@@ -109,12 +112,14 @@ public class UserController {
     @DeleteMapping("/me")
     public ResponseEntity<Void> deleteMe(@AuthenticationPrincipal
                                          Jwt jwt) {
+        Long userId = jwtUtils.extractUserId(jwt);
 
-        userService.deleteUser(jwt.getSubject());
+        userService.deleteUser(userId);
 
         return ResponseEntity.noContent().build();
 
 
     }
+
 
 }

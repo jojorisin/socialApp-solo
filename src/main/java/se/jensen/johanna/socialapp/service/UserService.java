@@ -40,8 +40,8 @@ public class UserService {
         return response;
     }
 
-    public UpdateUserResponse updateUser(UpdateUserRequest userRequest, String username) {
-        User user = userRepository.findByUsername(username).orElseThrow(NotFoundException::new);
+    public UpdateUserResponse updateUser(UpdateUserRequest userRequest, Long userId) {
+        User user = userRepository.findById(userId).orElseThrow(NotFoundException::new);
         userMapper.updateUser(userRequest, user);
         userRepository.save(user);
 
@@ -77,8 +77,8 @@ public class UserService {
                 .map(userMapper::toUserDTO).orElseThrow(NotFoundException::new);
     }
 
-    public void deleteUser(String username) {
-        User userToDelete = userRepository.findByUsername(username).orElseThrow(NotFoundException::new);
+    public void deleteUser(Long userId) {
+        User userToDelete = userRepository.findById(userId).orElseThrow(NotFoundException::new);
         userRepository.delete(userToDelete);
     }
 

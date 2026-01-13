@@ -25,13 +25,13 @@ public class TokenService {
                 .map(GrantedAuthority::getAuthority).toList();
         // .collect(Collectors.joining(" "));
 
-        MyUserDetails userDetails = (MyUserDetails) authentication.getPrincipal();
-
+        Long userId = ((MyUserDetails) authentication.getPrincipal()).getUserId();
         JwtClaimsSet claimsSet = JwtClaimsSet.builder()
                 .issuer("self")
                 .issuedAt(now)
                 .expiresAt(expiresAt)
-                .subject(authentication.getName())
+                .subject(userId.toString())
+                .claim("name", authentication.getName())
                 .claim("scope", scope)
                 .build();
 

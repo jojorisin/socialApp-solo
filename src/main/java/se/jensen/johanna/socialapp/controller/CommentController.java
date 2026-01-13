@@ -12,6 +12,7 @@ import se.jensen.johanna.socialapp.dto.CommentRequest;
 import se.jensen.johanna.socialapp.dto.CommentResponse;
 import se.jensen.johanna.socialapp.dto.ReplyCommentResponse;
 import se.jensen.johanna.socialapp.service.CommentService;
+import se.jensen.johanna.socialapp.util.JwtUtils;
 
 import java.util.List;
 
@@ -20,6 +21,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class CommentController {
     private final CommentService commentService;
+    private final JwtUtils jwtUtils;
 
     @GetMapping
     public ResponseEntity<List<CommentDTO>> getAllComments(@PathVariable
@@ -38,8 +40,10 @@ public class CommentController {
                                                        Jwt jwt,
                                                        @RequestBody @Valid
                                                        CommentRequest commentRequest) {
+        Long userId = jwtUtils.extractUserId(jwt);
+
         CommentResponse commentResponse = commentService.postComment(
-                postId, jwt.getSubject(), commentRequest);
+                postId, userId, commentRequest);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(commentResponse);
 
@@ -52,12 +56,13 @@ public class CommentController {
                                                                Jwt jwt,
                                                                @RequestBody @Valid CommentRequest commentRequest
     ) {
+        Long userId = jwtUtils.extractUserId(jwt);
 
         ReplyCommentResponse commentResponse =
                 commentService.replyComment(
                         postId,
                         commentId,
-                        jwt.getSubject(),
+                        userId,
                         commentRequest);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(commentResponse);
