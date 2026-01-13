@@ -14,4 +14,6 @@ public class Friendship {
 
     @ManyToOne
     private User receiver;
+
+    private FriendshipStatus status = FriendshipStatus.PENDING;
 }

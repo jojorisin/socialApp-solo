@@ -44,7 +44,6 @@ public class PostService {
     }
 
     public PostResponse addPost(PostRequest postRequest, String username) {
-        //User user = userRepository.findById(userId).orElseThrow(NotFoundException::new);
         User user = userRepository.findByUsername(username).orElseThrow(NotFoundException::new);
         Post post = postMapper.toPost(postRequest);
         post.setUser(user);
