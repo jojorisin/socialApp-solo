@@ -9,10 +9,8 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
-import se.jensen.johanna.socialapp.dto.PostDTO;
-import se.jensen.johanna.socialapp.dto.PostListDTO;
 import se.jensen.johanna.socialapp.dto.PostRequest;
-import se.jensen.johanna.socialapp.dto.PostResponse;
+import se.jensen.johanna.socialapp.dto.PostResponseDTO;
 import se.jensen.johanna.socialapp.dto.admin.AdminUpdatePostRequest;
 import se.jensen.johanna.socialapp.dto.admin.AdminUpdatePostResponse;
 import se.jensen.johanna.socialapp.service.PostService;
@@ -48,46 +46,46 @@ public class PostController {
 
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/admin")
-    public ResponseEntity<List<PostListDTO>> getAllPostsAdmin() {
-        List<PostListDTO> postDTOs = postService.findAllPosts();
-        return ResponseEntity.ok(postDTOs);
+    public ResponseEntity<List<PostResponseDTO>> getAllPostsAdmin() {
+        List<PostResponseDTO> postResponseDTOS = postService.findAllPosts();
+        return ResponseEntity.ok(postResponseDTOS);
     }
 
 
     @GetMapping
-    public ResponseEntity<List<PostListDTO>> getAllPosts() {
-        List<PostListDTO> postDTOs = postService.findAllPosts();
+    public ResponseEntity<List<PostResponseDTO>> getAllPosts() {
+        List<PostResponseDTO> postResponseDTOS = postService.findAllPosts();
 
-        return ResponseEntity.ok(postDTOs);
+        return ResponseEntity.ok(postResponseDTOS);
 
     }
 
     //här ska va comment
     @GetMapping("/{postId}")
-    public ResponseEntity<PostDTO> getPost(@PathVariable Long postId) {
-        PostDTO postDTO = postService.findPost(postId);
-        return ResponseEntity.ok(postDTO);
+    public ResponseEntity<PostResponseDTO> getPost(@PathVariable Long postId) {
+        PostResponseDTO postResponseDto = postService.findPost(postId);
+        return ResponseEntity.ok(postResponseDto);
     }
 
 
     @PreAuthorize("isAuthenticated()")
     @PostMapping
-    public ResponseEntity<PostResponse> post(@AuthenticationPrincipal
-                                             Jwt jwt,
-                                             @RequestBody @Valid PostRequest post) {
-        PostResponse postResponse = postService.addPost(post, jwt.getSubject());
+    public ResponseEntity<PostResponseDTO> post(@AuthenticationPrincipal
+                                                Jwt jwt,
+                                                @RequestBody @Valid PostRequest post) {
+        PostResponseDTO postResponse = postService.addPost(post, jwt.getSubject());
         return ResponseEntity.status(HttpStatus.CREATED).body(postResponse);
 
     }
 
     @PreAuthorize("isAuthenticated()")
     @PatchMapping("/{postId}")
-    public ResponseEntity<PostResponse> editPost(@AuthenticationPrincipal
-                                                 Jwt jwt,
-                                                 @PathVariable Long postId,
-                                                 @RequestBody @Valid PostRequest postRequest) {
+    public ResponseEntity<PostResponseDTO> editPost(@AuthenticationPrincipal
+                                                    Jwt jwt,
+                                                    @PathVariable Long postId,
+                                                    @RequestBody @Valid PostRequest postRequest) {
 
-        PostResponse postResponse = postService.updatePost(
+        PostResponseDTO postResponse = postService.updatePost(
                 postRequest,
                 postId,
                 jwt.getSubject());

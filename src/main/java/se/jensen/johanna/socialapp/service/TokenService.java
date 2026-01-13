@@ -11,7 +11,7 @@ import se.jensen.johanna.socialapp.security.MyUserDetails;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.stream.Collectors;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -21,9 +21,9 @@ public class TokenService {
     public String generateToken(Authentication authentication) {
         Instant now = Instant.now();
         Instant expiresAt = now.plus(1, ChronoUnit.HOURS);
-        String scope = authentication.getAuthorities().stream()
-                .map(GrantedAuthority::getAuthority)
-                .collect(Collectors.joining(" "));
+        List<String> scope = authentication.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority).toList();
+        // .collect(Collectors.joining(" "));
 
         MyUserDetails userDetails = (MyUserDetails) authentication.getPrincipal();
 

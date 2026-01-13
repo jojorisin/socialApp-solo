@@ -50,10 +50,15 @@ public class UserService {
     }
 
 
-    public List<UserDTO> findAllUsers() {
+    public List<UserListDTO> findAllUsers() {
         return userRepository.findAllUsersByRole(Role.MEMBER).stream()
-                .map(userMapper::toUserDTO).toList();
+                .map(userMapper::toUserListDTO).toList();
 
+    }
+
+    public UserWithPostsDTO getUserWithPosts(Long userId) {
+        User user = userRepository.findById(userId).orElseThrow(NotFoundException::new);
+        return userMapper.toUserWithPosts(user);
     }
 
     public List<AdminUserDTO> findAllUsersAdmin() {
@@ -100,7 +105,7 @@ public class UserService {
 
     }
 
-    private void validateCredentials(UserRequest userRequest) {
+    public void validateCredentials(UserRequest userRequest) {
         if (!userRequest.password().equals(userRequest.confirmPassword())) {
             throw new PasswordMisMatchException();
         }

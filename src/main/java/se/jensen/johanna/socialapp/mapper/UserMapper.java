@@ -8,15 +8,21 @@ import se.jensen.johanna.socialapp.dto.admin.AdminUserDTO;
 import se.jensen.johanna.socialapp.model.Role;
 import se.jensen.johanna.socialapp.model.User;
 
-@Mapper(componentModel = "spring")
+@Mapper(componentModel = "spring", uses = {PostMapper.class})
 public interface UserMapper {
 
     UserDTO toUserDTO(User user);
 
+    UserListDTO toUserListDTO(User user);
+
+
     UserResponse toUserResponse(User user);
 
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+    @Mapping(target = "username", ignore = true)
     void updateUser(UpdateUserRequest userRequest, @MappingTarget User user);
+
+    UserWithPostsDTO toUserWithPosts(User user);
 
     UpdateUserResponse toUpdateUserResponse(User user);
 

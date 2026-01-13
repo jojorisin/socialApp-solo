@@ -1,7 +1,8 @@
 package se.jensen.johanna.socialapp.dto;
 
-public record UpdateUserRequest(
-        String bio,
+public record UserListDTO(
+        Long userId,
+        String username,
         String profileImagePath
 ) {
 }

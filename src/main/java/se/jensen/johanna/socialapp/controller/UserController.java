@@ -25,14 +25,6 @@ public class UserController {
     //OBS vilka är för admin vilka för user
 
 
-    /*@PostMapping("/register")
-    public ResponseEntity<UserResponse> createUser(@RequestBody @Valid UserRequest userRequest) {
-        UserResponse userResponse = userService.registerUser(userRequest);
-
-        return ResponseEntity.status(HttpStatus.CREATED).body(userResponse);
-
-    }*/
-
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/admin")
     public ResponseEntity<List<AdminUserDTO>> getAllUsersAdmin() {
@@ -76,14 +68,15 @@ public class UserController {
         return ResponseEntity.ok(userResponse);
     }
 
-    //OBS hämta inte ADMIN för users att se
+    //Hämtar alla users med role MEMBER.
+    //Userlist innehåller mindre info
     @GetMapping
-    public ResponseEntity<List<UserDTO>> getAllUsers() {
-        List<UserDTO> users = userService.findAllUsers();
+    public ResponseEntity<List<UserListDTO>> getAllUsers() {
+        List<UserListDTO> users = userService.findAllUsers();
         return ResponseEntity.ok(users);
     }
 
-
+    //Visar användarprofil
     @GetMapping("/{userId}")
     public ResponseEntity<UserDTO> getUser(@PathVariable Long userId) {
         UserDTO userDTO = userService.findUser(userId);
@@ -91,9 +84,19 @@ public class UserController {
 
     }
 
+    //Visar användarprofil med alla posts den gjort
+    @GetMapping("{userId}/with-posts")
+    public ResponseEntity<UserWithPostsDTO> getUserWithPosts(@PathVariable Long userId) {
+
+        UserWithPostsDTO userWithPostsDTO = userService.getUserWithPosts(userId);
+        return ResponseEntity.ok(userWithPostsDTO);
+    }
+
+
+    //me används för att man inte ska kunna skriva i vilket id som helst.
+    //Är den inloggade användaren
     @PreAuthorize("isAuthenticated()")
     @PutMapping("/me")
-    //kan endast nå av authenticated
     public ResponseEntity<UpdateUserResponse> updateUser(@AuthenticationPrincipal Jwt jwt,
                                                          @RequestBody UpdateUserRequest userRequest) {
 
@@ -102,6 +105,7 @@ public class UserController {
     }
 
 
+    //Inloggade användaren
     @PreAuthorize("isAuthenticated()")
     @DeleteMapping("/me")
     public ResponseEntity<Void> deleteMe(@AuthenticationPrincipal

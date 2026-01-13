@@ -4,6 +4,6 @@ import java.util.List;
 
 public record HomePageResponse(
         String message,
-        List<PostDTO> posts
+        List<PostWithCommentsDTO> posts
 ) {
 }
