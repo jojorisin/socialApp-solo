@@ -9,8 +9,6 @@ import se.jensen.johanna.socialapp.model.Friendship;
 public interface FriendshipMapper {
 
     @Mapping(target = "senderId", source = "sender.userId")
-    @Mapping(target = "senderUsername", source = "sender.username")
     @Mapping(target = "receiverId", source = "receiver.userId")
-    @Mapping(target = "receiverUsername", source = "receiver.username")
     FriendResponseDTO toFriendResponse(Friendship friendship);
 }
