@@ -20,6 +20,10 @@ public class FriendshipController {
     private final FriendshipService friendshipService;
     private final JwtUtils jwtUtils;
 
+    /**
+     * Sends a friend request to the user with the specified receiverId.
+     * The sender is identified via the JWT token.
+     */
     @PreAuthorize("isAuthenticated()")
     @PostMapping("/{receiverId}")
     public ResponseEntity<FriendResponseDTO> sendFriendRequest(@PathVariable
@@ -34,6 +38,10 @@ public class FriendshipController {
 
     }
 
+    /**
+     * Accepts a pending friend request.
+     * Verifies that the logged-in user is the intended receiver of the request.
+     */
     @PreAuthorize("isAuthenticated()")
     @PutMapping ("accept/{friendshipId}")
     public ResponseEntity<FriendResponseDTO> acceptFriendRequest(
@@ -46,6 +54,22 @@ public class FriendshipController {
 
 
         return ResponseEntity.ok(friendResponseDTO);
+
+    }
+
+    @PreAuthorize("isAuthenticated")
+    @PutMapping("reject/{friendshipId}")
+    public ResponseEntity<FriendResponseDTO> rejectFriendRequest(
+            @PathVariable Long friendshipId,
+            @AuthenticationPrincipal Jwt jwt
+    ){
+        Long currentUserId = jwtUtils.extractUserId(jwt);
+        FriendResponseDTO friendResponseDTO = friendshipService.
+                rejectFriendRequest(friendshipId, currentUserId);
+
+
+        return ResponseEntity.ok(friendResponseDTO);
+
 
     }
 

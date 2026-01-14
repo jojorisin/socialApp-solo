@@ -16,9 +16,11 @@ public interface FriendshipRepository extends JpaRepository<Friendship, Long> {
     
     List<Friendship> findByReceiver_UserIdAndStatus(Long receiverId, FriendshipStatus status);
 
+    // Finds all friendships where the user is either the sender OR the receiver
     @Query("SELECT f FROM Friendship f WHERE f.sender.userId = :userId OR f.receiver.userId = :userId")
     List<Friendship> findFriendshipsByUserId(@Param("userId") Long userId);
 
+    // Finds friendships for a user filtered by a specific status (e.g., only ACCEPTED)
     @Query("SELECT f FROM Friendship f WHERE (f.sender.userId = :userId OR f.receiver.userId = :userId) AND f.status = :status")
     List<Friendship> findFriendshipsByUserIdAndStatus(@Param("userId") Long userId, @Param("status") FriendshipStatus status);
 }

@@ -21,7 +21,10 @@ public class Friendship {
 
     private LocalDateTime acceptedAt;
 
-    // Funktionen körs igång när user accepterar friend request.
+    /**
+     * Updates the friendship status to ACCEPTED and records the current timestamp.
+     * This should be called when a user accepts a friend request.
+     */
     public void accept() {
         this.status = FriendshipStatus.ACCEPTED;
         this.acceptedAt = LocalDateTime.now();
