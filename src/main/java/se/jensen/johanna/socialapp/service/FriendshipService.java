@@ -3,7 +3,9 @@ package se.jensen.johanna.socialapp.service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import se.jensen.johanna.socialapp.dto.FriendResponseDTO;
+import se.jensen.johanna.socialapp.dto.ReplyFriendRequest;
 import se.jensen.johanna.socialapp.exception.IllegalFriendshipStateException;
+import se.jensen.johanna.socialapp.exception.InvalidRequestException;
 import se.jensen.johanna.socialapp.exception.NotFoundException;
 import se.jensen.johanna.socialapp.exception.UnauthorizedAccessException;
 import se.jensen.johanna.socialapp.mapper.FriendshipMapper;
@@ -27,6 +29,46 @@ public class FriendshipService {
      * Creates a new friendship request with status PENDING.
      * Validates that users exist and that no friendship already exists between them.
      */
+
+    //Updates friendship with receiver response.
+    public FriendResponseDTO updateFriendRequest(Long friendshipId, Long userId, ReplyFriendRequest reply) {
+        User user = userRepository.findById(userId).orElseThrow(NotFoundException::new);
+        Friendship friendship = friendshipRepository.findById(friendshipId).orElseThrow(NotFoundException::new);
+        Long senderId = friendship.getSender().getUserId();
+        Long receiverId = friendship.getReceiver().getUserId();
+
+        if (reply.status().equals(FriendshipStatus.PENDING)) {
+            throw new InvalidRequestException("Friendship is already pending.");
+        }
+
+        //receiver cant cancel, only sender
+        if (reply.status().equals(FriendshipStatus.CANCELLED) &&
+                !userId.equals(senderId)) {
+            throw new UnauthorizedAccessException("You are not authorized to cancel. Please respond.");
+        }
+
+        //only receiver can Accept or Reject
+        if ((reply.status().equals(FriendshipStatus.ACCEPTED) ||
+                reply.status().equals(FriendshipStatus.REJECTED))
+                && !userId.equals(receiverId)) {
+            throw new UnauthorizedAccessException("You are not authorized to respond.");
+        }
+
+//If rejected by receiver or cancelled by sender resource is deleted
+        if (reply.status().equals(FriendshipStatus.REJECTED) ||
+                reply.status().equals(FriendshipStatus.CANCELLED)) {
+            friendshipRepository.delete(friendship);
+            return new FriendResponseDTO(null, reply.status(), null, null);
+
+        }
+
+
+        friendship.setStatus(reply.status());
+        friendshipRepository.save(friendship);
+        return friendshipMapper.toFriendResponseDTO(friendship);
+
+    }
+
     public FriendResponseDTO sendFriendRequest(Long senderId, Long receiverId) {
         if (senderId.equals(receiverId)) {
             throw new IllegalArgumentException("You cannot add yourself as a friend.");
@@ -47,7 +89,7 @@ public class FriendshipService {
         // Status is PENDING by default
 
         friendshipRepository.save(friendship); // Saves the new friendship request
-        return friendshipMapper.toFriendResponse(friendship);
+        return friendshipMapper.toFriendResponseDTO(friendship);
     }
 
     /**
@@ -79,14 +121,14 @@ public class FriendshipService {
         friendship.accept(); // Sets status to ACCEPTED and acceptedAt to now
         friendshipRepository.save(friendship); // Updates the current friendship
 
-        return friendshipMapper.toFriendResponse(friendship);
+        return friendshipMapper.toFriendResponseDTO(friendship);
     }
 
     /**
      * Rejects a pending friend request.
      * Ensures the user rejecting the request is the actual receiver.
      */
-    public FriendResponseDTO rejectFriendRequest(Long friendshipId, Long currentUserId){
+    public FriendResponseDTO rejectFriendRequest(Long friendshipId, Long currentUserId) {
         Friendship friendship = friendshipRepository.findById(friendshipId).
                 orElseThrow(() -> new NotFoundException("Friendship with id " + friendshipId + " not found."));
 
@@ -106,7 +148,7 @@ public class FriendshipService {
 
         friendship.setStatus(FriendshipStatus.REJECTED);
         friendshipRepository.save(friendship);
-        return friendshipMapper.toFriendResponse(friendship);
+        return friendshipMapper.toFriendResponseDTO(friendship);
     }
 
     // Retrieves all friendships (both pending and accepted) for a specific user

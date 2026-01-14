@@ -1,5 +1,5 @@
 package se.jensen.johanna.socialapp.model;
 
 public enum FriendshipStatus {
-    PENDING, ACCEPTED, REJECTED, BLOCKED
+    PENDING, ACCEPTED, REJECTED, CANCELLED
 }

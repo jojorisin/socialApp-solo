@@ -17,6 +17,16 @@ import java.util.Map;
 public class GlobalExceptionHandler {
 
 
+    @ExceptionHandler(InvalidRequestException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidRequest(InvalidRequestException e,
+                                                              WebRequest request) {
+        return buildErrorResponse(HttpStatus.BAD_REQUEST,
+                "INVALID_REQUEST",
+                e.getMessage(),
+                request);
+
+    }
+
     @ExceptionHandler(UnauthorizedAccessException.class)
     public ResponseEntity<ErrorResponse> handleUnauthorizedAccess(
             UnauthorizedAccessException e, WebRequest request) {

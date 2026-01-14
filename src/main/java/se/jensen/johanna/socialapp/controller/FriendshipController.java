@@ -7,9 +7,8 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
-import se.jensen.johanna.socialapp.dto.FriendRequestDTO;
 import se.jensen.johanna.socialapp.dto.FriendResponseDTO;
-import se.jensen.johanna.socialapp.model.Friendship;
+import se.jensen.johanna.socialapp.dto.ReplyFriendRequest;
 import se.jensen.johanna.socialapp.service.FriendshipService;
 import se.jensen.johanna.socialapp.util.JwtUtils;
 
@@ -43,11 +42,11 @@ public class FriendshipController {
      * Verifies that the logged-in user is the intended receiver of the request.
      */
     @PreAuthorize("isAuthenticated()")
-    @PutMapping ("accept/{friendshipId}")
+    @PutMapping("accept/{friendshipId}")
     public ResponseEntity<FriendResponseDTO> acceptFriendRequest(
             @PathVariable Long friendshipId,
             @AuthenticationPrincipal Jwt jwt
-    ){
+    ) {
         Long currentUserId = jwtUtils.extractUserId(jwt);
         FriendResponseDTO friendResponseDTO = friendshipService.
                 acceptFriendRequest(friendshipId, currentUserId);
@@ -62,7 +61,7 @@ public class FriendshipController {
     public ResponseEntity<FriendResponseDTO> rejectFriendRequest(
             @PathVariable Long friendshipId,
             @AuthenticationPrincipal Jwt jwt
-    ){
+    ) {
         Long currentUserId = jwtUtils.extractUserId(jwt);
         FriendResponseDTO friendResponseDTO = friendshipService.
                 rejectFriendRequest(friendshipId, currentUserId);
@@ -70,6 +69,26 @@ public class FriendshipController {
 
         return ResponseEntity.ok(friendResponseDTO);
 
+
+    }
+
+    @PreAuthorize("isAuthenticated()")
+    @PatchMapping("/{friendshipId}/respond")
+    public ResponseEntity<FriendResponseDTO> updateFriendship(@AuthenticationPrincipal
+                                                              Jwt jwt,
+                                                              @PathVariable
+                                                              Long friendshipId,
+                                                              @RequestBody
+                                                              ReplyFriendRequest replyFriendRequest) {
+        Long userId = jwtUtils.extractUserId(jwt);
+
+        FriendResponseDTO friendResponseDTO = friendshipService.updateFriendRequest(
+                friendshipId,
+                userId,
+                replyFriendRequest
+        );
+
+        return ResponseEntity.ok().body(friendResponseDTO);
 
     }
 

@@ -10,5 +10,5 @@ public interface FriendshipMapper {
 
     @Mapping(target = "senderId", source = "sender.userId")
     @Mapping(target = "receiverId", source = "receiver.userId")
-    FriendResponseDTO toFriendResponse(Friendship friendship);
+    FriendResponseDTO toFriendResponseDTO(Friendship friendship);
 }
