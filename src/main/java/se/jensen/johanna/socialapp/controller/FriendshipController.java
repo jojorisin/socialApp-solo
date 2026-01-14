@@ -6,11 +6,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+import se.jensen.johanna.socialapp.dto.FriendRequestDTO;
 import se.jensen.johanna.socialapp.dto.FriendResponseDTO;
+import se.jensen.johanna.socialapp.model.Friendship;
 import se.jensen.johanna.socialapp.service.FriendshipService;
 import se.jensen.johanna.socialapp.util.JwtUtils;
 
@@ -32,6 +31,21 @@ public class FriendshipController {
         FriendResponseDTO friendResponseDTO =
                 friendshipService.sendFriendRequest(senderId, receiverId);
         return ResponseEntity.status(HttpStatus.CREATED).body(friendResponseDTO);
+
+    }
+
+    @PreAuthorize("isAuthenticated()")
+    @PutMapping ("accept/{friendshipId}")
+    public ResponseEntity<FriendResponseDTO> acceptFriendRequest(
+            @PathVariable Long friendshipId,
+            @AuthenticationPrincipal Jwt jwt
+    ){
+        Long currentUserId = jwtUtils.extractUserId(jwt);
+        FriendResponseDTO friendResponseDTO = friendshipService.
+                acceptFriendRequest(friendshipId, currentUserId);
+
+
+        return ResponseEntity.ok(friendResponseDTO);
 
     }
 

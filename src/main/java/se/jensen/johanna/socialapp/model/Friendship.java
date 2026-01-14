@@ -1,14 +1,9 @@
 package se.jensen.johanna.socialapp.model;
 
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
-
 import java.time.LocalDateTime;
 
 @Entity
-@Getter
-@Setter
 public class Friendship {
 
     @Id
@@ -30,5 +25,45 @@ public class Friendship {
     public void accept() {
         this.status = FriendshipStatus.ACCEPTED;
         this.acceptedAt = LocalDateTime.now();
+    }
+
+    public Long getFriendshipId() {
+        return friendshipId;
+    }
+
+    public void setFriendshipId(Long friendshipId) {
+        this.friendshipId = friendshipId;
+    }
+
+    public User getSender() {
+        return sender;
+    }
+
+    public void setSender(User sender) {
+        this.sender = sender;
+    }
+
+    public User getReceiver() {
+        return receiver;
+    }
+
+    public void setReceiver(User receiver) {
+        this.receiver = receiver;
+    }
+
+    public FriendshipStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(FriendshipStatus status) {
+        this.status = status;
+    }
+
+    public LocalDateTime getAcceptedAt() {
+        return acceptedAt;
+    }
+
+    public void setAcceptedAt(LocalDateTime acceptedAt) {
+        this.acceptedAt = acceptedAt;
     }
 }

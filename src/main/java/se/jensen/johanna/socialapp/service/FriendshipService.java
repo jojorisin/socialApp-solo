@@ -32,24 +32,36 @@ public class FriendshipService {
             throw new IllegalStateException("Friendship or request already exists.");
         }
 
-        User sender = userRepository.findById(senderId).orElseThrow(NotFoundException::new);
-        User receiver = userRepository.findById(receiverId).orElseThrow(NotFoundException::new);
+        User sender = userRepository.findById(senderId).orElseThrow(() -> new NotFoundException("Sender with id " + senderId + " not found."));
+        User receiver = userRepository.findById(receiverId).orElseThrow(() -> new NotFoundException("Receiver with id " + receiverId + " not found."));
 
         Friendship friendship = new Friendship();
         friendship.setSender(sender);
         friendship.setReceiver(receiver);
         // Status is PENDING by default
 
-        friendshipRepository.save(friendship);
+        friendshipRepository.save(friendship); // Saves the new friendship request
         return friendshipMapper.toFriendResponse(friendship);
     }
 
-    public void acceptFriendRequest(Long friendshipId) {
+    public FriendResponseDTO acceptFriendRequest(
+            Long friendshipId,
+            Long currentUserId) {
+
         Friendship friendship = friendshipRepository.findById(friendshipId)
-                .orElseThrow(NotFoundException::new);
+                .orElseThrow(() -> new NotFoundException("Friendship with id " + friendshipId + " not found."));
+
+        if(!friendship.getReceiver().getUserId().equals(currentUserId)){
+            throw new IllegalStateException("You are not authorized to accept this request.");
+        }
+        if(friendship.getStatus().equals(FriendshipStatus.ACCEPTED)){
+            throw new IllegalStateException("This request has already been accepted.");
+        }
 
         friendship.accept(); // Sets status to ACCEPTED and acceptedAt to now
-        friendshipRepository.save(friendship);
+        friendshipRepository.save(friendship); // Updates the current friendship
+
+        return friendshipMapper.toFriendResponse(friendship);
     }
 
     public List<Friendship> getFriendships(Long userId) {
