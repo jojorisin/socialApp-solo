@@ -15,13 +15,13 @@ import se.jensen.johanna.socialapp.util.JwtUtils;
 import java.util.List;
 
 @RestController
-@RequestMapping("/posts/{postId}/comments")
+@RequestMapping
 @RequiredArgsConstructor
 public class CommentController {
     private final CommentService commentService;
     private final JwtUtils jwtUtils;
 
-    @GetMapping
+    @GetMapping("/posts/{postId}/comments")
     public ResponseEntity<List<CommentDTO>> getAllCommentsForPost(@PathVariable
                                                                   Long postId) {
         List<CommentDTO> commentDTOS = commentService.findAllMainComments(postId);
@@ -30,8 +30,9 @@ public class CommentController {
 
 
     }
+
     @PreAuthorize("isAuthenticated()")
-    @PostMapping
+    @PostMapping("/posts/{postId}/comments")
     public ResponseEntity<CommentResponse> postComment(@PathVariable
                                                        Long postId,
                                                        @AuthenticationPrincipal
@@ -48,18 +49,17 @@ public class CommentController {
     }
 
     @PreAuthorize("isAuthenticated()")
-    @PostMapping("/{commentId}")
-    public ResponseEntity<ReplyCommentResponse> replyComment(@PathVariable Long postId,
-                                                             @PathVariable Long commentId,
-                                                             @AuthenticationPrincipal
-                                                             Jwt jwt,
-                                                             @RequestBody @Valid CommentRequest commentRequest
+    @PostMapping("/comments/{commentId}/replies")
+    public ResponseEntity<ReplyCommentResponse> replyComment(
+            @PathVariable Long commentId,
+            @AuthenticationPrincipal
+            Jwt jwt,
+            @RequestBody @Valid CommentRequest commentRequest
     ) {
         Long userId = jwtUtils.extractUserId(jwt);
 
         ReplyCommentResponse commentResponse =
                 commentService.replyComment(
-                        postId,
                         commentId,
                         userId,
                         commentRequest);
@@ -70,7 +70,7 @@ public class CommentController {
     }
 
     @PreAuthorize("isAuthenticated()")
-    @PatchMapping("/{commentId}")
+    @PatchMapping("/comments/{commentId}")
     public ResponseEntity<UpdateCommentResponse> updateComment(@AuthenticationPrincipal
                                                                Jwt jwt,
                                                                @PathVariable
@@ -85,15 +85,15 @@ public class CommentController {
     }
 
     @PreAuthorize("isAuthenticated()")
-    @DeleteMapping("/{commentId}")
+    @DeleteMapping("/comments/{commentId}")
     public ResponseEntity<Void> deleteComment(@AuthenticationPrincipal
                                               Jwt jwt,
                                               @PathVariable
-                                              Long commentId){
+                                              Long commentId) {
 
         Long userId = jwtUtils.extractUserId(jwt);
 
-        commentService.deleteComment(userId,commentId);
+        commentService.deleteComment(userId, commentId);
 
         return ResponseEntity.noContent().build();
     }

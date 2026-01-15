@@ -40,12 +40,11 @@ public class CommentService {
 
     }
 
-    public ReplyCommentResponse replyComment(Long postId,
-                                             Long parentId,
-                                             Long userId,
-                                             CommentRequest commentRequest) {
+    public ReplyCommentResponse replyComment(
+            Long parentId,
+            Long userId,
+            CommentRequest commentRequest) {
         User user = userRepository.findById(userId).orElseThrow(NotFoundException::new);
-        Post post = postRepository.findById(postId).orElseThrow(NotFoundException::new);
         Comment parent = commentRepository.findById(parentId).orElseThrow(NotFoundException::new);
         Comment reply = commentMapper.toComment(commentRequest);
         reply.setUser(user);
@@ -76,9 +75,9 @@ public class CommentService {
         return commentMapper.toUpdateCommentResponse(commentToUpdate);
     }
 
-    public void deleteComment(Long commentId, Long userId){
+    public void deleteComment(Long commentId, Long userId) {
         Comment comment = commentRepository.findById(commentId).orElseThrow(NotFoundException::new);
-        if(!comment.getUser().getUserId().equals(userId)){
+        if (!comment.getUser().getUserId().equals(userId)) {
             throw new UnauthorizedAccessException("You are not authorized to delete comment");
         }
         commentRepository.delete(comment);
