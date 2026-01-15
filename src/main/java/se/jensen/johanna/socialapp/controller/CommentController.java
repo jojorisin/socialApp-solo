@@ -4,13 +4,11 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
-import se.jensen.johanna.socialapp.dto.CommentDTO;
-import se.jensen.johanna.socialapp.dto.CommentRequest;
-import se.jensen.johanna.socialapp.dto.CommentResponse;
-import se.jensen.johanna.socialapp.dto.ReplyCommentResponse;
+import se.jensen.johanna.socialapp.dto.*;
 import se.jensen.johanna.socialapp.service.CommentService;
 import se.jensen.johanna.socialapp.util.JwtUtils;
 
@@ -68,5 +66,20 @@ public class CommentController {
         return ResponseEntity.status(HttpStatus.CREATED).body(commentResponse);
 
 
+    }
+
+    @PreAuthorize("isAuthenticated()")
+    @PatchMapping("/{commentId}")
+    public ResponseEntity<UpdateCommentResponse> updateComment(@AuthenticationPrincipal
+                                                               Jwt jwt,
+                                                               @PathVariable
+                                                               Long commentId,
+                                                               @RequestBody
+                                                               CommentRequest commentRequest) {
+        Long userId = jwtUtils.extractUserId(jwt);
+        UpdateCommentResponse commentResponse = commentService.updateComment(
+                commentId, userId, commentRequest);
+
+        return ResponseEntity.ok(commentResponse);
     }
 }

@@ -2,12 +2,8 @@ package se.jensen.johanna.socialapp.dto;
 
 import java.time.LocalDateTime;
 
-public record PostResponseDTO(
-        Long postId,
-        Long userId,
-        String username,
+public record UpdateCommentResponse(
         String text,
-        LocalDateTime createdAt,
         LocalDateTime updatedAt
 ) {
 }

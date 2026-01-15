@@ -3,11 +3,9 @@ package se.jensen.johanna.socialapp.service;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import se.jensen.johanna.socialapp.dto.CommentDTO;
-import se.jensen.johanna.socialapp.dto.CommentRequest;
-import se.jensen.johanna.socialapp.dto.CommentResponse;
-import se.jensen.johanna.socialapp.dto.ReplyCommentResponse;
+import se.jensen.johanna.socialapp.dto.*;
 import se.jensen.johanna.socialapp.exception.NotFoundException;
+import se.jensen.johanna.socialapp.exception.UnauthorizedAccessException;
 import se.jensen.johanna.socialapp.mapper.CommentMapper;
 import se.jensen.johanna.socialapp.model.Comment;
 import se.jensen.johanna.socialapp.model.Post;
@@ -66,5 +64,15 @@ public class CommentService {
 
         return commentDTOS;
 
+    }
+
+    public UpdateCommentResponse updateComment(Long commentId, Long userId, CommentRequest commentRequest) {
+        Comment commentToUpdate = commentRepository.findById(commentId).orElseThrow(NotFoundException::new);
+        if (!commentToUpdate.getUser().getUserId().equals(userId)) {
+            throw new UnauthorizedAccessException("You are not authorized to update comment");
+        }
+        commentMapper.updateComment(commentRequest, commentToUpdate);
+        commentRepository.save(commentToUpdate);
+        return commentMapper.toUpdateCommentResponse(commentToUpdate);
     }
 }

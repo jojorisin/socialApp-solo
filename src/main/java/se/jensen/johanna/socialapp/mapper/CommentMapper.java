@@ -1,11 +1,7 @@
 package se.jensen.johanna.socialapp.mapper;
 
-import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
-import se.jensen.johanna.socialapp.dto.CommentDTO;
-import se.jensen.johanna.socialapp.dto.CommentRequest;
-import se.jensen.johanna.socialapp.dto.CommentResponse;
-import se.jensen.johanna.socialapp.dto.ReplyCommentResponse;
+import org.mapstruct.*;
+import se.jensen.johanna.socialapp.dto.*;
 import se.jensen.johanna.socialapp.model.Comment;
 
 @Mapper(componentModel = "spring")
@@ -26,4 +22,9 @@ public interface CommentMapper {
     @Mapping(target = "userId", source = "user.userId")
     @Mapping(target = "username", source = "user.username")
     CommentDTO toCommentDTO(Comment comment);
+
+    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+    void updateComment(CommentRequest commentRequest, @MappingTarget Comment comment);
+
+    UpdateCommentResponse toUpdateCommentResponse(Comment comment);
 }
