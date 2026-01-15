@@ -92,4 +92,15 @@ public class FriendshipController {
 
     }
 
+    @PreAuthorize("isAuthenticated()")
+    @DeleteMapping("{friendshipId}")
+    public ResponseEntity<Void> deleteFriendship(@PathVariable Long friendshipId, @AuthenticationPrincipal Jwt jwt) {
+        Long userId = jwtUtils.extractUserId(jwt);
+
+        friendshipService.deleteFriendship(friendshipId, userId);
+
+        return ResponseEntity.noContent().build();
+
+    }
+
 }
