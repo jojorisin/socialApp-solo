@@ -1,10 +1,7 @@
 package se.jensen.johanna.socialapp.mapper;
 
 import org.mapstruct.*;
-import se.jensen.johanna.socialapp.dto.CommentDTO;
-import se.jensen.johanna.socialapp.dto.PostRequest;
-import se.jensen.johanna.socialapp.dto.PostResponseDTO;
-import se.jensen.johanna.socialapp.dto.PostWithCommentsDTO;
+import se.jensen.johanna.socialapp.dto.*;
 import se.jensen.johanna.socialapp.dto.admin.AdminUpdatePostRequest;
 import se.jensen.johanna.socialapp.dto.admin.AdminUpdatePostResponse;
 import se.jensen.johanna.socialapp.model.Post;
@@ -35,8 +32,11 @@ public interface PostMapper {
     Post toPost(PostRequest postRequest);
 
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+    @Mapping(target = "createdAt", ignore = true)
     void updatePost(PostRequest postRequest, @MappingTarget Post post);
 
+    @Mapping(target = "userId", source = "post.user.userId")
+    UpdatePostResponseDTO toUpdatePostResponseDTO(Post post);
 
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     void updatePostAdmin(AdminUpdatePostRequest adminRequest, @MappingTarget Post post);
