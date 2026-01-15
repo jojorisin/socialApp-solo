@@ -1,7 +1,12 @@
 package se.jensen.johanna.socialapp.controller;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
+import org.springframework.lang.NonNull;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import se.jensen.johanna.socialapp.dto.PostResponseDTO;
@@ -9,8 +14,12 @@ import se.jensen.johanna.socialapp.dto.admin.AdminUpdatePostRequest;
 import se.jensen.johanna.socialapp.dto.admin.AdminUpdatePostResponse;
 import se.jensen.johanna.socialapp.service.PostService;
 
-import java.util.List;
-
+/**
+ * Controller for managing posts as an administrator.
+ * Provides endpoints to retrieve, update, and delete posts,
+ * as well as fetch all posts with pagination support.
+ * All operations require the user to have an ADMIN role.
+ */
 @RestController
 @RequestMapping("/admin/posts")
 @RequiredArgsConstructor
@@ -31,8 +40,11 @@ public class AdminPostController {
 
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping
-    public ResponseEntity<List<PostResponseDTO>> getAllPostsAdmin() {
-        List<PostResponseDTO> postResponseDTOS = postService.findAllPosts();
+    public @NonNull ResponseEntity<Page<PostResponseDTO>> getAllPostsAdmin(
+            @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC)
+            Pageable pageable
+    ) {
+        Page<PostResponseDTO> postResponseDTOS = postService.findAllPosts(pageable);
         return ResponseEntity.ok(postResponseDTOS);
     }
 
