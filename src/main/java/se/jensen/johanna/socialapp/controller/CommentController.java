@@ -30,7 +30,7 @@ public class CommentController {
 
 
     }
-
+    @PreAuthorize("isAuthenticated()")
     @PostMapping
     public ResponseEntity<CommentResponse> postComment(@PathVariable
                                                        Long postId,
@@ -47,6 +47,7 @@ public class CommentController {
 
     }
 
+    @PreAuthorize("isAuthenticated()")
     @PostMapping("/{commentId}")
     public ResponseEntity<ReplyCommentResponse> replyComment(@PathVariable Long postId,
                                                              @PathVariable Long commentId,
@@ -81,5 +82,19 @@ public class CommentController {
                 commentId, userId, commentRequest);
 
         return ResponseEntity.ok(commentResponse);
+    }
+
+    @PreAuthorize("isAuthenticated()")
+    @DeleteMapping("/{commentId}")
+    public ResponseEntity<Void> deleteComment(@AuthenticationPrincipal
+                                              Jwt jwt,
+                                              @PathVariable
+                                              Long commentId){
+
+        Long userId = jwtUtils.extractUserId(jwt);
+
+        commentService.deleteComment(userId,commentId);
+
+        return ResponseEntity.noContent().build();
     }
 }

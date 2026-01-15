@@ -75,4 +75,12 @@ public class CommentService {
         commentRepository.save(commentToUpdate);
         return commentMapper.toUpdateCommentResponse(commentToUpdate);
     }
+
+    public void deleteComment(Long commentId, Long userId){
+        Comment comment = commentRepository.findById(commentId).orElseThrow(NotFoundException::new);
+        if(!comment.getUser().getUserId().equals(userId)){
+            throw new UnauthorizedAccessException("You are not authorized to delete comment");
+        }
+        commentRepository.delete(comment);
+    }
 }
