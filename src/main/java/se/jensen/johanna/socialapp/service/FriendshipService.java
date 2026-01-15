@@ -1,5 +1,6 @@
 package se.jensen.johanna.socialapp.service;
 
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import se.jensen.johanna.socialapp.dto.FriendResponseDTO;
@@ -19,6 +20,7 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class FriendshipService {
 
     private final FriendshipRepository friendshipRepository;
@@ -165,5 +167,14 @@ public class FriendshipService {
     // Retrieves pending requests involving the user
     public List<Friendship> getPendingFriendships(Long userId) {
         return friendshipRepository.findFriendshipsByUserIdAndStatus(userId, FriendshipStatus.PENDING);
+    }
+
+    public void deleteFriendship(Long friendshipId, Long userId) {
+        Friendship friendship = friendshipRepository.findById(friendshipId).orElseThrow(NotFoundException::new);
+        if (!userId.equals(friendship.getSender().getUserId()) && !userId.equals(friendship.getReceiver().getUserId())) {
+            throw new UnauthorizedAccessException("You are not authorized to delete this friendship");
+        }
+
+        friendshipRepository.delete(friendship);
     }
 }
