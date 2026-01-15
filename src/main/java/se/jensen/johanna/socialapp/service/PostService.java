@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import se.jensen.johanna.socialapp.dto.PostRequest;
 import se.jensen.johanna.socialapp.dto.PostResponseDTO;
+import se.jensen.johanna.socialapp.dto.UpdatePostResponseDTO;
 import se.jensen.johanna.socialapp.dto.admin.AdminUpdatePostRequest;
 import se.jensen.johanna.socialapp.dto.admin.AdminUpdatePostResponse;
 import se.jensen.johanna.socialapp.exception.ForbiddenException;
@@ -51,7 +52,7 @@ public class PostService {
 
     }
 
-    public PostResponseDTO updatePost(PostRequest postRequest, Long postId, Long userId) {
+    public UpdatePostResponseDTO updatePost(PostRequest postRequest, Long postId, Long userId) {
         Post post = postRepository.findById(postId).orElseThrow(NotFoundException::new);
         if (!post.getUser().getUserId().equals(userId)) {
             throw new ForbiddenException("You are not authorized to edit this post");
@@ -60,7 +61,7 @@ public class PostService {
         postRepository.save(post);
 
 
-        return postMapper.toPostResponseDTO(post);
+        return postMapper.toUpdatePostResponseDTO(post);
 
     }
 
