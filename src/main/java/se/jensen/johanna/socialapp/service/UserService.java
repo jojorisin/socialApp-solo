@@ -59,7 +59,9 @@ public class UserService {
         userMapper.updateUser(userRequest, user);
         userRepository.save(user);
 
+        log.info("User with id={} updated", userId);
         return userMapper.toUpdateUserResponse(user);
+
 
     }
 
@@ -98,6 +100,7 @@ public class UserService {
                     return new NotFoundException();
                 });
         userRepository.delete(userToDelete);
+        log.info("User with id={} removed",userId);
     }
 
 
@@ -122,7 +125,11 @@ public class UserService {
 
     public AdminUpdateUserResponse updateUserAdmin(AdminUpdateUserRequest userRequest,
                                                    Long userId) {
-        User user = userRepository.findById(userId).orElseThrow(NotFoundException::new);
+        log.info("Trying to update ADMIN with id={}",userId);
+        User user = userRepository.findById(userId).orElseThrow(()-> {
+            log.warn("Could not update ADMIN - ADMIN with id={} not found", userId);
+            return new NotFoundException();
+                });
         userMapper.updateUserAdmin(userRequest, user);
         userRepository.save(user);
 
@@ -132,12 +139,15 @@ public class UserService {
 
     public void validateCredentials(RegisterUserRequest registerUserRequest) {
         if (!registerUserRequest.password().equals(registerUserRequest.confirmPassword())) {
+            log.warn("Password mismatch during registration for email={}", registerUserRequest.email());
             throw new PasswordMisMatchException();
         }
         if (userRepository.existsByEmail(registerUserRequest.email())) {
+            log.warn("Registration attempt with already registered email={}", registerUserRequest.email());
             throw new NotUniqueException("Email is already registered. Log in or try different email.");
         }
         if (userRepository.existsByUsername(registerUserRequest.username())) {
+            log.warn("Registration attempt with already taken username={}", registerUserRequest.username());
             throw new NotUniqueException("Username is already registered. Please choose a unique username.");
         }
     }
