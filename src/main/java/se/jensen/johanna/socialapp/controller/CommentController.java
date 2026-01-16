@@ -69,6 +69,23 @@ public class CommentController {
 
     }
 
+    /**
+     * Retrieves all replies to a specific comment
+     * If the commentId belongs to a reply, this method fetches the next level of nested replies.
+     *
+     * @param commentId ID of comment
+     * @return List of commentDtos with replies
+     */
+    @GetMapping("/comments/{commentId}/replies")
+    public ResponseEntity<List<CommentDTO>> getAllRepliesForComment(
+            @PathVariable
+            Long commentId) {
+        List<CommentDTO> replies = commentService.findAllRepliesForComment(commentId);
+
+        return ResponseEntity.ok(replies);
+
+    }
+
     @PreAuthorize("isAuthenticated()")
     @PatchMapping("/comments/{commentId}")
     public ResponseEntity<UpdateCommentResponse> updateComment(@AuthenticationPrincipal
