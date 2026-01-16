@@ -2,6 +2,8 @@ package se.jensen.johanna.socialapp.service;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import lombok.extern.slf4j.XSlf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -21,10 +23,10 @@ import se.jensen.johanna.socialapp.repository.UserRepository;
 import java.util.List;
 
 @Service
+@Slf4j
 @RequiredArgsConstructor
 @Transactional
 public class UserService {
-    private static final Logger log = LoggerFactory.getLogger(UserService.class);
 
     private final UserRepository userRepository;
     private final UserMapper userMapper;
