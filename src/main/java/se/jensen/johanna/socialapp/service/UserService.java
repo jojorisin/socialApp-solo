@@ -2,6 +2,7 @@ package se.jensen.johanna.socialapp.service;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import se.jensen.johanna.socialapp.dto.*;
@@ -19,20 +20,26 @@ import se.jensen.johanna.socialapp.repository.UserRepository;
 import java.util.List;
 
 @Service
+@Slf4j
 @RequiredArgsConstructor
 @Transactional
 public class UserService {
+
     private final UserRepository userRepository;
     private final UserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
 
 
     public RegisterUserResponse registerUser(RegisterUserRequest registerUserRequest) {
+        log.info("Trying to register new user with email={}", registerUserRequest.email());
         validateCredentials(registerUserRequest);
 
         String hashedPw = passwordEncoder.encode(registerUserRequest.password());
         User user = userMapper.toUser(registerUserRequest, hashedPw, Role.MEMBER);
         userRepository.save(user);
+
+        log.info("New user registered with id={} and email={}", user.getUserId(), user.getEmail());
+
         RegisterUserResponse response = new RegisterUserResponse();
         response.setEmail(user.getEmail());
         response.setUsername(user.getUsername());
@@ -41,11 +48,19 @@ public class UserService {
     }
 
     public UpdateUserResponse updateUser(UpdateUserRequest userRequest, Long userId) {
-        User user = userRepository.findById(userId).orElseThrow(NotFoundException::new);
+        log.info("Trying to update user with id={}", userId);
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> {
+                    log.warn("Could not update user - user with id={} not found", userId);
+                    return new NotFoundException();
+                });
         userMapper.updateUser(userRequest, user);
         userRepository.save(user);
 
+        log.info("User with id={} updated", userId);
         return userMapper.toUpdateUserResponse(user);
+
 
     }
 
@@ -78,18 +93,27 @@ public class UserService {
     }
 
     public void deleteUser(Long userId) {
-        User userToDelete = userRepository.findById(userId).orElseThrow(NotFoundException::new);
+        log.info("Trying to delete user with id={}", userId);
+        User userToDelete = userRepository.findById(userId).orElseThrow(()-> {
+                    log.warn("Could not remove - user with id={} was not found", userId);
+                    return new NotFoundException();
+                });
         userRepository.delete(userToDelete);
+        log.info("User with id={} removed",userId);
     }
 
 
     //GER UT ROLE_ADMIN
     public RegisterUserResponse registerAdminUser(RegisterUserRequest registerUserRequest) {
+        log.info("Trying to register ADMIN-user with email={}", registerUserRequest.email());
         validateCredentials(registerUserRequest);
 
         String hashedPw = passwordEncoder.encode(registerUserRequest.password());
         User user = userMapper.toUser(registerUserRequest, hashedPw, Role.ADMIN);
         userRepository.save(user);
+
+        log.info("ADMIN-user was created with id={}", user.getUserId());
+
         RegisterUserResponse response = new RegisterUserResponse();
         response.setEmail(user.getEmail());
         response.setUsername(user.getUsername());
@@ -100,7 +124,11 @@ public class UserService {
 
     public AdminUpdateUserResponse updateUserAdmin(AdminUpdateUserRequest userRequest,
                                                    Long userId) {
-        User user = userRepository.findById(userId).orElseThrow(NotFoundException::new);
+        log.info("Trying to update ADMIN with id={}",userId);
+        User user = userRepository.findById(userId).orElseThrow(()-> {
+            log.warn("Could not update ADMIN - ADMIN with id={} not found", userId);
+            return new NotFoundException();
+                });
         userMapper.updateUserAdmin(userRequest, user);
         userRepository.save(user);
 
@@ -110,12 +138,15 @@ public class UserService {
 
     public void validateCredentials(RegisterUserRequest registerUserRequest) {
         if (!registerUserRequest.password().equals(registerUserRequest.confirmPassword())) {
+            log.warn("Password mismatch during registration for email={}", registerUserRequest.email());
             throw new PasswordMisMatchException();
         }
         if (userRepository.existsByEmail(registerUserRequest.email())) {
+            log.warn("Registration attempt with already registered email={}", registerUserRequest.email());
             throw new NotUniqueException("Email is already registered. Log in or try different email.");
         }
         if (userRepository.existsByUsername(registerUserRequest.username())) {
+            log.warn("Registration attempt with already taken username={}", registerUserRequest.username());
             throw new NotUniqueException("Username is already registered. Please choose a unique username.");
         }
     }
