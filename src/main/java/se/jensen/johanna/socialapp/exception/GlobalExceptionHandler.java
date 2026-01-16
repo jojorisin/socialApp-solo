@@ -16,6 +16,11 @@ import java.util.Map;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    @ExceptionHandler(RefreshTokenException.class)
+    public ResponseEntity<ErrorResponse> handleRefreshTokenException(RefreshTokenException e, WebRequest request) {
+        return buildErrorResponse(HttpStatus.FORBIDDEN, "REFRESH_TOKEN_EXPIRED", e.getMessage(), request);
+    }
+
 
     @ExceptionHandler(InvalidRequestException.class)
     public ResponseEntity<ErrorResponse> handleInvalidRequest(InvalidRequestException e,

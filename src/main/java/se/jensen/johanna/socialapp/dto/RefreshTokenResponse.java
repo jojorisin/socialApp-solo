@@ -1,6 +1,6 @@
 package se.jensen.johanna.socialapp.dto;
 
-public record LoginResponseDTO(
+public record RefreshTokenResponse(
         String accessToken,
         String refreshToken
 ) {
