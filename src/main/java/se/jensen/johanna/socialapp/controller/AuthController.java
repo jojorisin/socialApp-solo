@@ -8,10 +8,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import se.jensen.johanna.socialapp.dto.*;
 import se.jensen.johanna.socialapp.exception.RefreshTokenException;
 import se.jensen.johanna.socialapp.model.RefreshToken;
@@ -20,6 +17,7 @@ import se.jensen.johanna.socialapp.service.RefreshTokenService;
 import se.jensen.johanna.socialapp.service.TokenService;
 import se.jensen.johanna.socialapp.service.UserService;
 
+@CrossOrigin(origins = "http://localhost:5174")
 @RestController
 @RequestMapping("/auth")
 @RequiredArgsConstructor
@@ -32,7 +30,6 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<LoginResponseDTO> getToken(@RequestBody
                                                      LoginRequestDTO loginRequestDTO) {
-//Update to send refreshtoken aswell
         Authentication auth = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
                         loginRequestDTO.username(),
@@ -79,20 +76,6 @@ public class AuthController {
 
     }
 
-    //Ändra denna på nåt sätt. är bara admin som ska kunna ge ut admin-medlemskap
-    //så it doesnt make sense att den också ska skicka tillbaka en token
-    @PostMapping("/register/admin")
-    public ResponseEntity<RegisterUserResponse> registerAdmin(@Valid @RequestBody
-                                                              RegisterUserRequest registerUserRequest) {
-        RegisterUserResponse userResponse = userService.registerAdminUser(registerUserRequest);
-        Authentication auth = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(
-                        registerUserRequest.username(),
-                        registerUserRequest.password()));
-        String token = tokenService.generateToken(auth);
-        userResponse.setAccessToken(token);
-        return ResponseEntity.ok().body(userResponse);
-    }
 
     @PostMapping("/logout")
     public ResponseEntity<Void> logout(@AuthenticationPrincipal Jwt jwt) {
