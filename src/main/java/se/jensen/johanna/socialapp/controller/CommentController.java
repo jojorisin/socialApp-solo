@@ -14,6 +14,13 @@ import se.jensen.johanna.socialapp.util.JwtUtils;
 
 import java.util.List;
 
+/**
+ * Controller handling all operations related to comments
+ * Providing endpoints to create, update, delete and get comments
+ * as well as managing nested replies
+ * Technical note: A reply is a comment that stores the ID of another comment
+ * as its parentId, creating a nested relationship.
+ */
 @RestController
 @RequestMapping
 @RequiredArgsConstructor
@@ -21,6 +28,12 @@ public class CommentController {
     private final CommentService commentService;
     private final JwtUtils jwtUtils;
 
+    /**
+     * Retrieves all main comments for a post
+     *
+     * @param postId ID of the post to fetch comments to
+     * @return {@link CommentDTO}
+     */
     @GetMapping("/posts/{postId}/comments")
     public ResponseEntity<List<CommentDTO>> getAllCommentsForPost(@PathVariable
                                                                   Long postId) {
@@ -31,6 +44,14 @@ public class CommentController {
 
     }
 
+    /**
+     * Creates a comment to a specific post as authenticated user
+     *
+     * @param postId         ID of post to comment
+     * @param jwt            AccessToken containing userId in sub
+     * @param commentRequest {@link CommentRequest}
+     * @return {@link CommentResponse}
+     */
     @PreAuthorize("isAuthenticated()")
     @PostMapping("/posts/{postId}/comments")
     public ResponseEntity<CommentResponse> postComment(@PathVariable
@@ -48,6 +69,16 @@ public class CommentController {
 
     }
 
+    /**
+     * Creates a reply to a specific comment as an authenticated user
+     * Technical note: A reply is a comment that stores the ID of another comment
+     * as its parentId, creating a nested relationship.
+     *
+     * @param commentId      ID of comment to reply to
+     * @param jwt            AccessToken containing userId in sub
+     * @param commentRequest {@link CommentRequest}
+     * @return {@link ReplyCommentResponse}
+     */
     @PreAuthorize("isAuthenticated()")
     @PostMapping("/comments/{commentId}/replies")
     public ResponseEntity<ReplyCommentResponse> replyComment(
@@ -71,7 +102,8 @@ public class CommentController {
 
     /**
      * Retrieves all replies to a specific comment
-     * If the commentId belongs to a reply, this method fetches the next level of nested replies.
+     * Technical note: A reply is a comment that stores the ID of another comment
+     * as its parentId, creating a nested relationship.
      *
      * @param commentId ID of comment
      * @return List of commentDtos with replies
@@ -86,6 +118,15 @@ public class CommentController {
 
     }
 
+    /**
+     * Updates a specific comment as an authenticated user and verified owner of comment
+     * Only the owner of the comment is authorized to perform this update
+     *
+     * @param jwt            AccessToken used to verify ownership
+     * @param commentId      ID of comment to update
+     * @param commentRequest {@link CommentRequest}
+     * @return {@link UpdateCommentResponse}
+     */
     @PreAuthorize("isAuthenticated()")
     @PatchMapping("/comments/{commentId}")
     public ResponseEntity<UpdateCommentResponse> updateComment(@AuthenticationPrincipal
@@ -101,6 +142,13 @@ public class CommentController {
         return ResponseEntity.ok(commentResponse);
     }
 
+    /**
+     * Deletes comment as an authenticated user and verified owner of comment
+     *
+     * @param jwt       AccessToken containing userId i sub
+     * @param commentId ID of comment to delete
+     * @return ResponseEntity with no content (204)
+     */
     @PreAuthorize("isAuthenticated()")
     @DeleteMapping("/comments/{commentId}")
     public ResponseEntity<Void> deleteComment(@AuthenticationPrincipal
