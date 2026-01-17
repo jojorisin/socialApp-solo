@@ -6,9 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import se.jensen.johanna.socialapp.dto.*;
-import se.jensen.johanna.socialapp.dto.admin.AdminUpdateUserRequest;
-import se.jensen.johanna.socialapp.dto.admin.AdminUpdateUserResponse;
-import se.jensen.johanna.socialapp.dto.admin.AdminUserDTO;
+import se.jensen.johanna.socialapp.dto.admin.*;
 import se.jensen.johanna.socialapp.exception.NotFoundException;
 import se.jensen.johanna.socialapp.exception.NotUniqueException;
 import se.jensen.johanna.socialapp.exception.PasswordMisMatchException;
@@ -94,41 +92,39 @@ public class UserService {
 
     public void deleteUser(Long userId) {
         log.info("Trying to delete user with id={}", userId);
-        User userToDelete = userRepository.findById(userId).orElseThrow(()-> {
-                    log.warn("Could not remove - user with id={} was not found", userId);
-                    return new NotFoundException();
-                });
+        User userToDelete = userRepository.findById(userId).orElseThrow(() -> {
+            log.warn("Could not remove - user with id={} was not found", userId);
+            return new NotFoundException();
+        });
         userRepository.delete(userToDelete);
-        log.info("User with id={} removed",userId);
+        log.info("User with id={} removed", userId);
     }
 
-
-    //GER UT ROLE_ADMIN
-    public RegisterUserResponse registerAdminUser(RegisterUserRequest registerUserRequest) {
-        log.info("Trying to register ADMIN-user with email={}", registerUserRequest.email());
-        validateCredentials(registerUserRequest);
-
-        String hashedPw = passwordEncoder.encode(registerUserRequest.password());
-        User user = userMapper.toUser(registerUserRequest, hashedPw, Role.ADMIN);
+    /**
+     * Updates and saves Role for user by Admin
+     *
+     * @param request (@link RoleRequest) Contains email of user to update and type of role
+     * @return (@ link RoleResponse)
+     */
+    public RoleResponse addRole(RoleRequest request) {
+        User user = userRepository.findByEmail(request.email()).orElseThrow(() -> {
+            log.warn("Could not update role - user with email={} not found", request.email());
+            return new NotFoundException();
+        });
+        log.info("Admin role-update initiated for user with email={}", user.getEmail());
+        user.setRole(request.role());
         userRepository.save(user);
-
-        log.info("ADMIN-user was created with id={}", user.getUserId());
-
-        RegisterUserResponse response = new RegisterUserResponse();
-        response.setEmail(user.getEmail());
-        response.setUsername(user.getUsername());
-        response.setUserId(user.getUserId());
-        return response;
-
+        return new RoleResponse(user.getEmail(), user.getRole());
     }
+
 
     public AdminUpdateUserResponse updateUserAdmin(AdminUpdateUserRequest userRequest,
                                                    Long userId) {
-        log.info("Trying to update ADMIN with id={}",userId);
-        User user = userRepository.findById(userId).orElseThrow(()-> {
-            log.warn("Could not update ADMIN - ADMIN with id={} not found", userId);
+        log.info("Admin update initiated for user with id={}", userId);
+        User user = userRepository.findById(userId).orElseThrow(() -> {
+            log.warn("Could not update User - User with id={} not found", userId);
             return new NotFoundException();
-                });
+        });
         userMapper.updateUserAdmin(userRequest, user);
         userRepository.save(user);
 
