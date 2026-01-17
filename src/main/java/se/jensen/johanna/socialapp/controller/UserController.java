@@ -2,16 +2,14 @@ package se.jensen.johanna.socialapp.controller;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.oauth2.jwt.Jwt;
-import org.springframework.web.bind.annotation.*;
-import se.jensen.johanna.socialapp.dto.UpdateUserRequest;
-import se.jensen.johanna.socialapp.dto.UpdateUserResponse;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 import se.jensen.johanna.socialapp.dto.UserDTO;
 import se.jensen.johanna.socialapp.dto.UserListDTO;
+import se.jensen.johanna.socialapp.service.FriendshipService;
 import se.jensen.johanna.socialapp.service.UserService;
-import se.jensen.johanna.socialapp.util.JwtUtils;
 
 import java.util.List;
 
@@ -20,7 +18,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class UserController {
     private final UserService userService;
-    private final JwtUtils jwtUtils;
+    private final FriendshipService friendshipService;
 
     //OBS vilka är för admin vilka för user
 
@@ -42,31 +40,19 @@ public class UserController {
     }
 
 
-    //me används för att man inte ska kunna skriva i vilket id som helst.
-    //Är den inloggade användaren
-    @PreAuthorize("isAuthenticated()")
-    @PutMapping("/me")
-    public ResponseEntity<UpdateUserResponse> updateUser(@AuthenticationPrincipal Jwt jwt,
-                                                         @RequestBody UpdateUserRequest userRequest) {
-        Long userId = jwtUtils.extractUserId(jwt);
+    /**
+     * Retrieves a list of accepted friendships to a specific user
+     *
+     * @param userId ID of user to fetch friends for
+     * @return {@link UserListDTO}
+     */
+    @GetMapping("/{userId}/friends")
+    public ResponseEntity<List<UserListDTO>> getMyFriends(@PathVariable Long userId) {
 
-        UpdateUserResponse userResponse = userService.updateUser(userRequest, userId);
-        return ResponseEntity.ok(userResponse);
-    }
-
-
-    //Inloggade användaren
-    @PreAuthorize("isAuthenticated()")
-    @DeleteMapping("/me")
-    public ResponseEntity<Void> deleteMe(@AuthenticationPrincipal
-                                         Jwt jwt) {
-        Long userId = jwtUtils.extractUserId(jwt);
-
-        userService.deleteUser(userId);
-
-        return ResponseEntity.noContent().build();
+        List<UserListDTO> friends = friendshipService.getFriendsForUser(userId);
 
 
+        return ResponseEntity.ok(friends);
     }
 
 

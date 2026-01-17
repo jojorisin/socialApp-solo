@@ -4,16 +4,20 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import se.jensen.johanna.socialapp.dto.FriendResponseDTO;
+import se.jensen.johanna.socialapp.dto.MyFriendRequest;
+import se.jensen.johanna.socialapp.dto.UserListDTO;
 import se.jensen.johanna.socialapp.exception.IllegalFriendshipStateException;
 import se.jensen.johanna.socialapp.exception.NotFoundException;
 import se.jensen.johanna.socialapp.exception.UnauthorizedAccessException;
 import se.jensen.johanna.socialapp.mapper.FriendshipMapper;
+import se.jensen.johanna.socialapp.mapper.UserMapper;
 import se.jensen.johanna.socialapp.model.Friendship;
 import se.jensen.johanna.socialapp.model.FriendshipStatus;
 import se.jensen.johanna.socialapp.model.User;
 import se.jensen.johanna.socialapp.repository.FriendshipRepository;
 import se.jensen.johanna.socialapp.repository.UserRepository;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -24,6 +28,7 @@ public class FriendshipService {
     private final FriendshipRepository friendshipRepository;
     private final UserRepository userRepository;
     private final FriendshipMapper friendshipMapper;
+    private final UserMapper userMapper;
 
 
     /**
@@ -121,6 +126,55 @@ public class FriendshipService {
     // Retrieves only accepted friendships (The "Friends List")
     public List<Friendship> getAcceptedFriendships(Long userId) {
         return friendshipRepository.findFriendshipsByUserIdAndStatus(userId, FriendshipStatus.ACCEPTED);
+    }
+
+    /**
+     * Retrieves a list of accepted friendships from userId.
+     * Filters through the friendships and extracts the "other" user
+     *
+     * @param userId ID of the user to fetch friends for
+     * @return {@link UserListDTO}
+     */
+    public List<UserListDTO> getFriendsForUser(Long userId) {
+        List<Friendship> friendships = friendshipRepository.findFriendshipsByUserIdAndStatus(userId, FriendshipStatus.ACCEPTED);
+
+        List<UserListDTO> friends = new ArrayList<>();
+        for (Friendship f : friendships) {
+            User friend = f.getSender().getUserId().equals(userId) ?
+                    f.getReceiver() : f.getSender();
+            friends.add(userMapper.toUserListDTO(friend));
+        }
+        return friends;
+    }
+
+    /**
+     * Retrieves a list of pending friendships for authenticated user
+     * Filters list and returns the other user in the relation
+     * boolean isIncoming is true when the user is the receiver
+     *
+     * @param userId ID of user to fetch friendrequests for
+     * @return {@link MyFriendRequest}
+     */
+    public List<MyFriendRequest> getFriendRequestsForUser(Long userId) {
+        List<Friendship> pendingFriends = friendshipRepository.findFriendshipsByUserIdAndStatus(userId, FriendshipStatus.PENDING);
+        List<MyFriendRequest> friendRequests = new ArrayList<>();
+        for (Friendship f : pendingFriends) {
+            User otherUser = f.getSender().getUserId().equals(userId) ?
+                    f.getReceiver() : f.getSender();
+
+            boolean isIncoming = f.getReceiver().getUserId().equals(userId);
+
+            friendRequests.add(new MyFriendRequest(
+                    f.getFriendshipId(),
+                    otherUser.getUserId(),
+                    otherUser.getUsername(),
+                    otherUser.getProfileImagePath(),
+                    isIncoming
+            ));
+
+        }
+        return friendRequests;
+
     }
 
     // Retrieves pending requests involving the user
