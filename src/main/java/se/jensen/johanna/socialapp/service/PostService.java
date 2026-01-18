@@ -6,6 +6,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import se.jensen.johanna.socialapp.dto.PostRequest;
+import se.jensen.johanna.socialapp.dto.PostResponse;
 import se.jensen.johanna.socialapp.dto.PostResponseDTO;
 import se.jensen.johanna.socialapp.dto.UpdatePostResponseDTO;
 import se.jensen.johanna.socialapp.dto.admin.AdminUpdatePostRequest;
@@ -17,6 +18,8 @@ import se.jensen.johanna.socialapp.model.Post;
 import se.jensen.johanna.socialapp.model.User;
 import se.jensen.johanna.socialapp.repository.PostRepository;
 import se.jensen.johanna.socialapp.repository.UserRepository;
+
+import java.util.List;
 
 
 @Transactional
@@ -45,6 +48,16 @@ public class PostService {
         return userPostPage.map(postMapper::toPostResponseDTO);
     }
 
+    public List<PostResponse> getPostsForUser(Long userId){
+        List<Post> userPosts=postRepository.findAllPostsByUserId(userId);
+        return userPosts.stream()
+                .map(postMapper::toPostResponse)
+                .toList();
+    }
+//    public List<PostResponse> getAllPostsByUser(Long userId){
+//        User user = userRepository.findById(userId).orElseThrow(NotFoundException::new);
+//        List<Post> posts = postRepository.findByUser(user);
+//    }
     public PostResponseDTO findPost(Long postId) {
         Post post = postRepository.findById(postId)
                 .orElseThrow(NotFoundException::new);

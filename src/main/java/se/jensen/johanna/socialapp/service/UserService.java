@@ -26,6 +26,8 @@ public class UserService {
     private final UserRepository userRepository;
     private final UserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
+    private final FriendshipService friendshipService;
+    private final PostService postService;
 
 
     public RegisterUserResponse registerUser(RegisterUserRequest registerUserRequest) {
@@ -141,6 +143,21 @@ public class UserService {
             log.warn("Registration attempt with already taken username={}", registerUserRequest.username());
             throw new NotUniqueException("Username is already registered. Please choose a unique username.");
         }
+    }
+
+
+
+    public HomePageResponse getProfile(Long userId){
+        UserDTO userDTO = findUser(userId);
+        List<UserListDTO> friends = friendshipService.getFriendsForUser(userId);
+        List<PostResponse> posts = postService.getPostsForUser(userId);
+
+        return new HomePageResponse(
+                "Profilsida",
+                userDTO.username(),
+                userDTO.profileImagePath(),
+                posts,
+                friends);
     }
 
 

@@ -4,6 +4,9 @@ import java.util.List;
 
 public record HomePageResponse(
         String message,
-        List<PostWithCommentsDTO> posts
+        String username,
+        String profileImagePath,
+        List<PostResponse> posts,
+        List<UserListDTO> friends
 ) {
 }
