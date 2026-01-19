@@ -2,10 +2,12 @@ package se.jensen.johanna.socialapp.service;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import se.jensen.johanna.socialapp.dto.PostRequest;
+import se.jensen.johanna.socialapp.dto.PostResponse;
 import se.jensen.johanna.socialapp.dto.PostResponseDTO;
 import se.jensen.johanna.socialapp.dto.UpdatePostResponseDTO;
 import se.jensen.johanna.socialapp.dto.admin.AdminUpdatePostRequest;
