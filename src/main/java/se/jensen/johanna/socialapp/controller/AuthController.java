@@ -1,6 +1,5 @@
 package se.jensen.johanna.socialapp.controller;
 
-import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
@@ -21,7 +20,11 @@ import se.jensen.johanna.socialapp.service.TokenService;
 import se.jensen.johanna.socialapp.service.UserService;
 import se.jensen.johanna.socialapp.util.CookieUtils;
 
-
+/**
+ * REST controller for authentication operations.
+ * Handles user login, registration, token refresh, and logout.
+ * All endpoints return JWT tokens in response-body and refresh tokens as HTTP-only cookies.
+ */
 @RestController
 @RequestMapping("/auth")
 @RequiredArgsConstructor
@@ -32,30 +35,37 @@ public class AuthController {
     private final RefreshTokenService refreshTokenService;
     private final CookieUtils cookieUtils;
 
+    /**
+     * Authenticates a user and returns a JWT token
+     * Sets a refresh token as an HTTP-only cookie
+     *
+     * @param loginRequestDTO {@link LoginRequestDTO} contains username and password
+     * @return Response with {@link LoginResponseDTO}
+     */
     @PostMapping("/login")
     public ResponseEntity<LoginResponseDTO> getToken(@RequestBody
-                                                     LoginRequestDTO loginRequestDTO,
-                                                     HttpServletResponse httpServletResponse) {
-        Authentication auth = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(
-                        loginRequestDTO.username(),
-                        loginRequestDTO.password()
-                ));
+                                                     LoginRequestDTO loginRequestDTO) {
 
 
-        LoginResponseDTO loginResponseDTO = createLoginResponse(auth);
+        LoginResponseDTO loginResponseDTO = createLoginResponse(getAuth(loginRequestDTO.username(), loginRequestDTO.password()));
 
         RefreshToken refreshToken = refreshTokenService.createRefreshToken(loginResponseDTO.userId());
         ResponseCookie responseCookie = cookieUtils.createRefreshCookie(refreshToken.getToken());
-        httpServletResponse.addHeader(HttpHeaders.SET_COOKIE, responseCookie.toString());
 
-        return ResponseEntity.ok(loginResponseDTO);
+        return ResponseEntity.ok().header(HttpHeaders.SET_COOKIE, responseCookie.toString())
+                .body(loginResponseDTO);
     }
 
+    /**
+     * Authenticates the old token and returns a new JWT token and sets a new refresh token as a cookie
+     *
+     * @param oldTokenStr old token as a string
+     * @return Response with {@link RefreshTokenResponse} contains JWT token
+     */
     @PostMapping("/refresh")
     public ResponseEntity<RefreshTokenResponse> refreshToken(
-            @CookieValue(name = "refreshToken") String oldTokenStr,
-            HttpServletResponse httpServletResponse
+            @CookieValue(name = "refreshToken") String oldTokenStr
+
     ) {
 
         RefreshToken oldToken = refreshTokenService.findByToken(oldTokenStr)
@@ -63,49 +73,56 @@ public class AuthController {
                 .orElseThrow(() -> new RefreshTokenException("RefreshToken is not in database"));
 
         RefreshToken newRefreshToken = refreshTokenService.createRefreshToken(oldToken.getUser().getUserId());
-
         ResponseCookie responseCookie = cookieUtils.createRefreshCookie(newRefreshToken.getToken());
-        httpServletResponse.addHeader(HttpHeaders.SET_COOKIE, responseCookie.toString());
         String newJwt = tokenService.generateToken(oldToken.getUser());
-        return ResponseEntity.ok(new RefreshTokenResponse(newJwt));
+
+        return ResponseEntity.ok().header(HttpHeaders.SET_COOKIE, responseCookie.toString())
+                .body(new RefreshTokenResponse(newJwt));
 
 
     }
 
+    /**
+     * Creates a new user and authenticates them automatically for a smooth client experience.
+     * Sets a refresh token as an HTTP-only cookie.
+     *
+     * @param registerUserRequest contains username, password and user details
+     * @return Response with {@link LoginResponseDTO} with JWT token and user information
+     */
     @PostMapping("/register")
     public ResponseEntity<LoginResponseDTO> register(@RequestBody
-                                                     RegisterUserRequest registerUserRequest, HttpServletResponse httpServletResponse) {
+                                                     RegisterUserRequest registerUserRequest) {
         userService.registerUser(registerUserRequest);
 
-        Authentication auth = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(
-                        registerUserRequest.username(),
-                        registerUserRequest.password()));
 
-        LoginResponseDTO loginResponseDTO = createLoginResponse(auth);
+        LoginResponseDTO loginResponseDTO = createLoginResponse(getAuth(registerUserRequest.username(), registerUserRequest.password()));
 
         RefreshToken refreshToken = refreshTokenService.createRefreshToken(loginResponseDTO.userId());
         ResponseCookie responseCookie = cookieUtils.createRefreshCookie(refreshToken.getToken());
-        httpServletResponse.addHeader(HttpHeaders.SET_COOKIE, responseCookie.toString());
 
 
-        return ResponseEntity.ok(loginResponseDTO);
+        return ResponseEntity.ok().header(HttpHeaders.SET_COOKIE, responseCookie.toString())
+                .body(loginResponseDTO);
 
     }
 
-
+    /**
+     * Logs out a user by deleting their refresh token and clearing the cookie.
+     *
+     * @param refreshTokenStr the refresh token from cookie, optional
+     * @return empty Response with clear header
+     */
     @PostMapping("/logout")
     public ResponseEntity<Void> logout(
-            @CookieValue(name = "refreshToken", required = false) String refreshTokenStr,
-            HttpServletResponse httpServletResponse
+            @CookieValue(name = "refreshToken", required = false) String refreshTokenStr
+
     ) {
         if (refreshTokenStr != null) {
             refreshTokenService.deleteRefreshToken(refreshTokenStr);
         }
         ResponseCookie cleanCookie = cookieUtils.getCleanResponseCookie();
-        httpServletResponse.addHeader(HttpHeaders.SET_COOKIE, cleanCookie.toString());
-        //logout metod, frontend rensar token
-        return ResponseEntity.noContent().build();
+
+        return ResponseEntity.noContent().header(HttpHeaders.SET_COOKIE, cleanCookie.toString()).build();
     }
 
     /**
@@ -125,6 +142,17 @@ public class AuthController {
         );
 
 
+    }
+
+    /**
+     * Private help method to create username and password authentication
+     *
+     * @param username Username of the user that needs authentication
+     * @param password Password of the user that needs authentication
+     * @return {@link Authentication}
+     */
+    private Authentication getAuth(String username, String password) {
+        return authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(username, password));
     }
 
 
