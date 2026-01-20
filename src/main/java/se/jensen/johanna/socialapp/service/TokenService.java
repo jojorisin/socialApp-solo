@@ -2,6 +2,7 @@ package se.jensen.johanna.socialapp.service;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.oauth2.jwt.JwtClaimsSet;
@@ -19,11 +20,14 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class TokenService {
+    @Value("${app.jwt.expiration-minutes:15}")
+    private Long expirationMinutes;
+
     private final JwtEncoder jwtEncoder;
 
     public String generateToken(User user) {
         Instant now = Instant.now();
-        Instant expiresAt = now.plus(15, ChronoUnit.MINUTES);
+        Instant expiresAt = now.plus(expirationMinutes, ChronoUnit.MINUTES);
         List<String> scope = List.of("ROLE_" + user.getRole().name());
         JwtClaimsSet claimsSet = JwtClaimsSet.builder()
                 .issuer("self")
@@ -41,7 +45,7 @@ public class TokenService {
 
     public String generateToken(Authentication authentication) {
         Instant now = Instant.now();
-        Instant expiresAt = now.plus(15, ChronoUnit.MINUTES);
+        Instant expiresAt = now.plus(expirationMinutes, ChronoUnit.MINUTES);
         List<String> scope = authentication.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority).toList();
 

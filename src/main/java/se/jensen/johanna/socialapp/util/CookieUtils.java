@@ -9,6 +9,9 @@ public class CookieUtils {
     @Value("${app.jwt.refresh-expiration-ms}")
     private Long refreshTokenDurationMs;
 
+    @Value("${app.cookie.same-site}")
+    private String sameSite;
+
     @Value("${app.cookie.secure}")
     private Boolean cookieSecure;
 
@@ -18,7 +21,7 @@ public class CookieUtils {
                 .secure(cookieSecure)
                 .path("/auth")
                 .maxAge(refreshTokenDurationMs / 1000)
-                .sameSite("Lax")
+                .sameSite(sameSite)
                 .build();
     }
 
