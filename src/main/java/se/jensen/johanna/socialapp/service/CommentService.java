@@ -2,6 +2,7 @@ package se.jensen.johanna.socialapp.service;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import se.jensen.johanna.socialapp.dto.*;
 import se.jensen.johanna.socialapp.exception.NotFoundException;
@@ -22,6 +23,7 @@ import java.util.List;
  * including nested replies. This class also enforces authorization rules and
  * ensures proper exception handling for non-existent or unauthorized access.
  */
+@Slf4j
 @Service
 @Transactional
 @RequiredArgsConstructor
@@ -43,12 +45,23 @@ public class CommentService {
     public CommentResponse commentPost(Long postId,
                                        Long userId,
                                        CommentRequest commentRequest) {
-        User user = userRepository.findById(userId).orElseThrow(NotFoundException::new);
-        Post post = postRepository.findById(postId).orElseThrow(NotFoundException::new);
+        log.info("User with id={} is trying to comment on post with id={}", userId, postId);
+
+        User user = userRepository.findById(userId).orElseThrow(() -> {
+            log.warn("User with id={} was not found when trying to comment on post with id={}", userId, postId);
+            return new NotFoundException("User with id " + userId + " not found.");
+        });
+        Post post = postRepository.findById(postId).orElseThrow(() -> {
+            log.warn("Post with id={} was not found when user with id={} was trying to comment", postId, userId);
+            return new NotFoundException("Post with id " + postId + " not found.");
+        });
+
         Comment comment = commentMapper.toComment(commentRequest);
         comment.setUser(user);
         comment.setPost(post);
         commentRepository.save(comment);
+
+        log.info("User with id={} successfully commented on post with id={}", userId, postId);
 
         return commentMapper.toResponse(comment);
 
@@ -67,12 +80,22 @@ public class CommentService {
             Long parentId,
             Long userId,
             CommentRequest commentRequest) {
-        User user = userRepository.findById(userId).orElseThrow(NotFoundException::new);
-        Comment parent = commentRepository.findById(parentId).orElseThrow(NotFoundException::new);
+        log.info("User with id={} is trying to comment on comment with id={}", userId, parentId);
+
+        User user = userRepository.findById(userId).orElseThrow(() -> {
+            log.warn("User with id={} was not found when trying to comment on a comment", userId);
+            return new NotFoundException("User with id " + userId + " not found.");
+        });
+        Comment parent = commentRepository.findById(parentId).orElseThrow(() -> {
+            log.warn("Comment with id={} was not found when user with id={} was trying to comment", parentId, userId);
+            return new NotFoundException("Comment with id " + parentId + " not found.");
+        });
         Comment reply = commentMapper.toComment(commentRequest);
         reply.setUser(user);
         parent.addReply(reply);
         commentRepository.save(reply);
+
+        log.info("User with id={} successfully commented on comment with id={}", userId, parentId);
 
         return commentMapper.toReplyCommentResponse(reply);
 
@@ -113,12 +136,20 @@ public class CommentService {
      * @throws UnauthorizedAccessException If the userId does not match comments owner
      */
     public UpdateCommentResponse updateComment(Long commentId, Long userId, CommentRequest commentRequest) {
-        Comment commentToUpdate = commentRepository.findById(commentId).orElseThrow(NotFoundException::new);
+        log.info("User with id={} is trying to update comment with id={}", userId, commentId);
+
+        Comment commentToUpdate = commentRepository.findById(commentId).orElseThrow(() -> {
+            log.warn("Comment with id={} was not found when user with id={} attempted to update it", commentId, userId);
+            return new NotFoundException("Comment with id " + commentId + " not found.");
+        });
         if (!commentToUpdate.getUser().getUserId().equals(userId)) {
+            log.warn("User with id={} is not authorized to update comment with id={}", userId, commentId);
             throw new UnauthorizedAccessException("You are not authorized to update comment");
         }
         commentMapper.updateComment(commentRequest, commentToUpdate);
         commentRepository.save(commentToUpdate);
+
+        log.info("User with id={} successfully updated comment with id={}", userId, commentId);
         return commentMapper.toUpdateCommentResponse(commentToUpdate);
     }
 
@@ -131,10 +162,17 @@ public class CommentService {
      * @throws UnauthorizedAccessException If the userId does not match comments owner
      */
     public void deleteComment(Long commentId, Long userId) {
-        Comment comment = commentRepository.findById(commentId).orElseThrow(NotFoundException::new);
+        log.info("User with id={} is trying to delete comment with id={}", userId, commentId);
+
+        Comment comment = commentRepository.findById(commentId).orElseThrow(() -> {
+            log.warn("Comment with id={} was not found when user with id={} attempted to delete it", commentId, userId);
+            return new NotFoundException("Comment with id " + commentId + " not found.");
+        });
         if (!comment.getUser().getUserId().equals(userId)) {
+            log.warn("User with id={} is not authorized to delete comment with id={}", userId, commentId);
             throw new UnauthorizedAccessException("You are not authorized to delete comment");
         }
         commentRepository.delete(comment);
+        log.info("User with id={} successfully deleted comment with id={}", userId, commentId);
     }
 }
