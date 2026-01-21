@@ -17,6 +17,12 @@ import se.jensen.johanna.socialapp.repository.UserRepository;
 
 import java.util.List;
 
+/**
+ * Service class responsible for managing user-related operations.
+ * This includes user registration, profile management, administrative updates,
+ * and retrieval of user-specific data such as profiles and friend lists.
+ */
+
 @Service
 @Slf4j
 @RequiredArgsConstructor
@@ -30,6 +36,14 @@ public class UserService {
     private final PostService postService;
 
 
+    /**
+     * Registers a new user in the system.
+     * Validates credentials, hashes the password, and assigns the default MEMBER role.
+     *
+     * @param registerUserRequest the request object containing registration details
+     * @throws PasswordMisMatchException if the password and confirmation-password do not match
+     * @throws NotUniqueException        if the email or username is already in use
+     */
     public void registerUser(RegisterUserRequest registerUserRequest) {
         log.info("Trying to register new user with email={}", registerUserRequest.email());
         validateCredentials(registerUserRequest);
@@ -40,12 +54,16 @@ public class UserService {
 
         log.info("New user registered with id={} and email={}", user.getUserId(), user.getEmail());
 
-      /*  RegisterUserResponse response = new RegisterUserResponse();
-        response.setEmail(user.getEmail());
-        response.setUsername(user.getUsername());
-        response.setUserId(user.getUserId());
-        return response;*/
     }
+
+    /**
+     * Updates an existing user's information.
+     *
+     * @param userRequest the request object containing updated user details
+     * @param userId      the ID of the user to update
+     * @return the updated user details as an {@link UpdateUserResponse}
+     * @throws NotFoundException if the user with the given ID does not exist
+     */
 
     public UpdateUserResponse updateUser(UpdateUserRequest userRequest, Long userId) {
         log.info("Trying to update user with id={}", userId);
@@ -64,6 +82,11 @@ public class UserService {
 
     }
 
+    /**
+     * Retrieves a list of all users with the MEMBER role.
+     *
+     * @return a list of {@link UserListDTO} objects
+     */
 
     public List<UserListDTO> findAllUsers() {
         return userRepository.findAllUsersByRole(Role.MEMBER).stream()
@@ -71,22 +94,48 @@ public class UserService {
 
     }
 
+    /**
+     * Retrieves a list of all users in the system for administrative purposes.
+     *
+     * @return a list of {@link AdminUserDTO} objects
+     */
 
     public List<AdminUserDTO> findAllUsersAdmin() {
         return userRepository.findAll().stream()
                 .map(userMapper::toAdminUserDTO).toList();
     }
 
+    /**
+     * Finds a specific user by their ID and returns detailed administrative data.
+     *
+     * @param userId the ID of the user to find
+     * @return the user details as an {@link AdminUserDTO}
+     * @throws NotFoundException if the user does not exist
+     */
     public AdminUserDTO findUserAdmin(Long userId) {
         User user = userRepository.findById(userId).orElseThrow(NotFoundException::new);
 
         return userMapper.toAdminUserDTO(user);
     }
 
+    /**
+     * Finds a specific user by their ID and returns standard user data.
+     *
+     * @param userId the ID of the user to find
+     * @return the user details as a {@link UserDTO}
+     * @throws NotFoundException if the user does not exist
+     */
     public UserDTO findUser(Long userId) {
         return userRepository.findById(userId)
                 .map(userMapper::toUserDTO).orElseThrow(NotFoundException::new);
     }
+
+    /**
+     * Deletes a user from the system by their ID.
+     *
+     * @param userId the ID of the user to delete
+     * @throws NotFoundException if the user does not exist
+     */
 
     public void deleteUser(Long userId) {
         log.info("Trying to delete user with id={}", userId);
@@ -99,11 +148,13 @@ public class UserService {
     }
 
     /**
-     * Updates and saves Role for user by Admin
+     * Updates and saves the Role for a user. Intended for Admin use.
      *
-     * @param request {@link RoleRequest} Contains email of user to update and type of role
-     * @return {@link RoleResponse}
+     * @param request {@link RoleRequest} contains the email of the user and the new role type
+     * @return {@link RoleResponse} containing the updated role information
+     * @throws NotFoundException if the user with the specified email is not found
      */
+
     public RoleResponse addRole(RoleRequest request) {
         User user = userRepository.findByEmail(request.email()).orElseThrow(() -> {
             log.warn("Could not update role - user with email={} not found", request.email());
@@ -115,6 +166,14 @@ public class UserService {
         return new RoleResponse(user.getEmail(), user.getRole());
     }
 
+    /**
+     * Performs an administrative update of a user's details.
+     *
+     * @param userRequest the request object containing updated user details for admin
+     * @param userId      the ID of the user to update
+     * @return the updated user data as an {@link AdminUpdateUserResponse}
+     * @throws NotFoundException if the user does not exist
+     */
 
     public AdminUpdateUserResponse updateUserAdmin(AdminUpdateUserRequest userRequest,
                                                    Long userId) {
@@ -129,6 +188,15 @@ public class UserService {
         return userMapper.toAdminResponse(user);
 
     }
+
+    /**
+     * Validates that the registration details are unique and consistent.
+     * Checks if passwords match and if the email/username is already registered.
+     *
+     * @param registerUserRequest the request object to validate
+     * @throws PasswordMisMatchException if passwords do not match
+     * @throws NotUniqueException        if email or username is already taken
+     */
 
     public void validateCredentials(RegisterUserRequest registerUserRequest) {
         if (!registerUserRequest.password().equals(registerUserRequest.confirmPassword())) {
@@ -149,7 +217,7 @@ public class UserService {
     public HomePageResponse getProfile(Long userId) {
         UserDTO userDTO = findUser(userId);
         List<UserListDTO> friends = friendshipService.getFriendsForUser(userId);
-        List<PostResponse> posts = postService.getPostsForUser(userId);
+        List<PostResponse> posts = postService.getPostsForCurrentUser(userId);
 
         return new HomePageResponse(
                 "Profilsida",

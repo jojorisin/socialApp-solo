@@ -16,6 +16,11 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 
+/**
+ * Service responsible for generating JSON Web Tokens (JWT) used for authentication and authorization.
+ * It provides methods to create tokens based on user entities or Spring Security authentication objects.
+ */
+
 @Transactional
 @Service
 @RequiredArgsConstructor
@@ -24,6 +29,15 @@ public class TokenService {
     private Long expirationMinutes;
 
     private final JwtEncoder jwtEncoder;
+
+    /**
+     * Generates a JWT for a specific {@link User} entity.
+     * This method generates a new token when the old JWT has expired
+     *
+     * @param user the user entity for whom the token is generated
+     * @return a signed JWT string containing user identity and roles
+     */
+
 
     public String generateToken(User user) {
         Instant now = Instant.now();
@@ -42,6 +56,14 @@ public class TokenService {
 
 
     }
+
+    /**
+     * Generates a JWT based on the provided {@link Authentication} object.
+     * This method extracts the user details and granted authorities from the authentication context.
+     *
+     * @param authentication the authentication object containing user principal and authorities
+     * @return a signed JWT string
+     */
 
     public String generateToken(Authentication authentication) {
         Instant now = Instant.now();

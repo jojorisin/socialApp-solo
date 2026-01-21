@@ -15,6 +15,7 @@ public class CookieUtils {
     @Value("${app.cookie.secure}")
     private Boolean cookieSecure;
 
+
     public ResponseCookie createRefreshCookie(String refreshToken) {
         return ResponseCookie.from("refreshToken", refreshToken)
                 .httpOnly(true)
