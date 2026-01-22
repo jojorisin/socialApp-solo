@@ -2,6 +2,12 @@ package se.jensen.johanna.socialapp.controller;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+
+import org.springdoc.core.annotations.ParameterObject;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -11,7 +17,6 @@ import org.springframework.web.bind.annotation.*;
 import se.jensen.johanna.socialapp.dto.*;
 import se.jensen.johanna.socialapp.service.CommentService;
 import se.jensen.johanna.socialapp.util.JwtUtils;
-
 import java.util.List;
 
 /**
@@ -35,17 +40,21 @@ public class CommentController {
      * @return {@link CommentDTO}
      */
     @GetMapping("/posts/{postId}/comments")
-    public ResponseEntity<List<CommentDTO>> getAllCommentsForPost(@PathVariable
-                                                                  Long postId) {
-        List<CommentDTO> commentDTOS = commentService.findAllMainComments(postId);
+    public ResponseEntity<Page<CommentDTO>> getAllCommentsForPost(@PathVariable
+                                                                  Long postId,
+                                                                  @ParameterObject
+                                                                  @PageableDefault(size = 10,
+                                                                  sort = "createdAt",
+                                                                  direction = Sort.Direction.DESC)
+                                                                  Pageable pageable) {
+
+        Page<CommentDTO> commentDTOS = commentService.findAllMainComments(postId, pageable);
 
         return ResponseEntity.ok(commentDTOS);
-
-
     }
 
     /**
-     * Creates a comment to a specific post as authenticated user
+     * Creates a comment to a specific post as an authenticated user
      *
      * @param postId         ID of post to comment
      * @param jwt            AccessToken containing userId in sub

@@ -3,6 +3,8 @@ package se.jensen.johanna.socialapp.service;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import se.jensen.johanna.socialapp.dto.*;
 import se.jensen.johanna.socialapp.exception.NotFoundException;
@@ -107,9 +109,9 @@ public class CommentService {
      * @param postId ID of the post to fetch comments to
      * @return Returns {@link CommentDTO}
      */
-    public List<CommentDTO> findAllMainComments(Long postId) {
-        return commentRepository.findAllMainComments(postId)
-                .stream().map(commentMapper::toCommentDTO).toList();
+    public Page<CommentDTO> findAllMainComments(Long postId, Pageable pageable) {
+        return commentRepository.findByPost_postIdAndParentIsNull(postId, pageable)
+                .map(commentMapper::toCommentDTO);
 
 
     }
