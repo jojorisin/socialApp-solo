@@ -21,6 +21,7 @@ import se.jensen.johanna.socialapp.service.PostService;
  * as well as fetch all posts with pagination support.
  * All operations require the user to have an ADMIN role.
  */
+@PreAuthorize("hasRole('ADMIN')")
 @RestController
 @RequestMapping("/admin/posts")
 @RequiredArgsConstructor
@@ -28,8 +29,13 @@ public class AdminPostController {
     private final PostService postService;
 
 
-    //ändra responsen kanske så den är anapssad till admin.
-    @PreAuthorize("hasRole('ADMIN')")
+    /**
+     * Retrieves a specific post by its unique identifier.
+     *
+     * @param postId the ID of the post to retrieve.
+     * @return a {@link ResponseEntity} containing the {@link PostResponseDTO} if found.
+     */
+
     @GetMapping("/{postId}")
     public ResponseEntity<PostResponseDTO> getPost(@PathVariable
                                                    Long postId) {
@@ -39,7 +45,12 @@ public class AdminPostController {
 
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+    /**
+     * Retrieves a paginated list of all posts in the system.
+     *
+     * @param pageable pagination and sorting information (default: 10 items, sorted by createdAt descending).
+     * @return a {@link ResponseEntity} containing a {@link Page} of {@link PostResponseDTO}.
+     */
     @GetMapping
     public @NonNull ResponseEntity<Page<PostResponseDTO>> getAllPostsAdmin(
             @ParameterObject @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC)
@@ -49,7 +60,13 @@ public class AdminPostController {
         return ResponseEntity.ok(postResponseDTOS);
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+    /**
+     * Updates an existing post using administrative permissions.
+     *
+     * @param adminRequest the request body containing update details.
+     * @param postId       the ID of the post to update.
+     * @return a {@link ResponseEntity} containing the {@link AdminUpdatePostResponse}.
+     */
     @PatchMapping("/{postId}")
     public ResponseEntity<AdminUpdatePostResponse> updatePostAdmin(@RequestBody
                                                                    AdminUpdatePostRequest
@@ -61,7 +78,12 @@ public class AdminPostController {
         return ResponseEntity.ok(adminUpdatePostResponse);
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+    /**
+     * Deletes a post from the system.
+     *
+     * @param postId the ID of the post to delete.
+     * @return a {@link ResponseEntity} with no content (204) upon successful deletion.
+     */
     @DeleteMapping("/{postId}")
     public ResponseEntity<Void> deletePostAdmin(@PathVariable Long postId) {
         postService.deletePostAdmin(postId);

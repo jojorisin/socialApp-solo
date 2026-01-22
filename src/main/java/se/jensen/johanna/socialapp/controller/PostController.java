@@ -25,7 +25,9 @@ import java.util.Optional;
 
 /**
  * Controller for handling operations related to posts in the system.
+ * Provides endpoints for creating, retrieving, updating, and deleting posts.
  */
+
 @RestController
 @RequestMapping("/posts")
 @RequiredArgsConstructor
@@ -60,17 +62,25 @@ public class PostController {
     }
 
     /**
-     * Retrieves one specific post
+     * Retrieves a specific post by its ID.
      *
-     * @param postId ID of post to fetch
-     * @return (@ link PostResponseDTO)
+     * @param postId The unique identifier of the post to fetch.
+     * @return A ResponseEntity containing the {@link PostResponseDTO}.
      */
+
     @GetMapping("/{postId}")
     public ResponseEntity<PostResponseDTO> getPost(@PathVariable Long postId) {
         PostResponseDTO postResponseDto = postService.findPost(postId);
         return ResponseEntity.ok(postResponseDto);
     }
 
+    /**
+     * Creates a new post for the currently authenticated user.
+     *
+     * @param jwt  The JWT of the authenticated user.
+     * @param post The post-data to be created.
+     * @return A ResponseEntity containing the created {@link PostResponseDTO} and HTTP 201 Status.
+     */
 
     @PreAuthorize("isAuthenticated()")
     @PostMapping
@@ -84,6 +94,15 @@ public class PostController {
 
     }
 
+    /**
+     * Updates an existing post.
+     * The service layer ensures that only the owner of the post can perform the update.
+     *
+     * @param jwt         The JWT of the authenticated user.
+     * @param postId      The ID of the post to update.
+     * @param postRequest The updated post data.
+     * @return A {@link ResponseEntity} containing the {@link UpdatePostResponseDTO}.
+     */
     @PreAuthorize("isAuthenticated()")
     @PatchMapping("/{postId}")
     public ResponseEntity<UpdatePostResponseDTO> editPost(@AuthenticationPrincipal
@@ -102,6 +121,14 @@ public class PostController {
 
     }
 
+    /**
+     * Deletes a specific post.
+     * The service layer ensures that only the owner of the post can perform the deletion.
+     *
+     * @param jwt    The JWT of the authenticated user.
+     * @param postId The ID of the post to delete.
+     * @return A {@link ResponseEntity} with HTTP 204 No Content status upon successful deletion.
+     */
     @PreAuthorize("isAuthenticated()")
     @DeleteMapping("/{postId}")
     public ResponseEntity<Void> deletePost(@AuthenticationPrincipal
