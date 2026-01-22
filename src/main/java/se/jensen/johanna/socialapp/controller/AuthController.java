@@ -92,11 +92,9 @@ public class AuthController {
     @PostMapping("/register")
     public ResponseEntity<LoginResponseDTO> register(@RequestBody
                                                      RegisterUserRequest registerUserRequest) {
+
         userService.registerUser(registerUserRequest);
-
-
         LoginResponseDTO loginResponseDTO = createLoginResponse(getAuth(registerUserRequest.username(), registerUserRequest.password()));
-
         RefreshToken refreshToken = refreshTokenService.createRefreshToken(loginResponseDTO.userId());
         ResponseCookie responseCookie = cookieUtils.createRefreshCookie(refreshToken.getToken());
 

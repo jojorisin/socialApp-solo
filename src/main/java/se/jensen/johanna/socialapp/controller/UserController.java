@@ -15,6 +15,11 @@ import se.jensen.johanna.socialapp.service.UserService;
 
 import java.util.List;
 
+/**
+ * REST controller for managing user-related operations.
+ * Provides endpoints for retrieving user lists, individual profiles, and user friendships.
+ */
+
 @RestController
 @RequestMapping("/users")
 @RequiredArgsConstructor
@@ -25,15 +30,25 @@ public class UserController {
     //OBS vilka är för admin vilka för user
 
 
-    //Hämtar alla users med role MEMBER.
-    //Userlist innehåller mindre info
+    /**
+     * Retrieves a list of all users with the MEMBER role.
+     * The returned list contains simplified user information.
+     *
+     * @return a list of UserListDTO objects
+     */
     @GetMapping
     public ResponseEntity<List<UserListDTO>> getAllUsers() {
         List<UserListDTO> users = userService.findAllUsers();
         return ResponseEntity.ok(users);
     }
 
-    //Visar användarprofil
+    /**
+     * Retrieves detailed profile information for a specific user.
+     *
+     * @param userId the ID of the user to retrieve
+     * @return the UserDTO containing user details
+     */
+
     @GetMapping("/{userId}")
     public ResponseEntity<UserDTO> getUser(@PathVariable Long userId) {
         UserDTO userDTO = userService.findUser(userId);
@@ -41,9 +56,16 @@ public class UserController {
 
     }
 
+    /**
+     * Retrieves the profile/homepage data for a specific user.
+     * Access is restricted to authenticated users.
+     *
+     * @param userId the ID of the user whose profile data is being requested
+     * @return the HomePageResponse containing profile and activity data
+     */
     @PreAuthorize("isAuthenticated()")
     @GetMapping("/{userId}/profile")
-    public ResponseEntity<HomePageResponse> getProfile(@PathVariable Long userId){
+    public ResponseEntity<HomePageResponse> getProfile(@PathVariable Long userId) {
 
         HomePageResponse homePage = userService.getProfile(userId);
 

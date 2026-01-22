@@ -16,6 +16,11 @@ import se.jensen.johanna.socialapp.util.JwtUtils;
 
 import java.util.List;
 
+/**
+ * Controller for handling operations related to the currently authenticated user.
+ * Provides endpoints for managing the user's own profile, friends, and friend requests.
+ */
+
 @PreAuthorize("isAuthenticated()")
 @RestController
 @RequestMapping("/my")
@@ -42,6 +47,13 @@ public class MyController {
         return ResponseEntity.ok(myFriendRequests);
     }
 
+
+    /**
+     * Retrieves a list of all accepted friends for the authenticated user.
+     *
+     * @param jwt the {@link Jwt} access token containing the authenticated user's identity
+     * @return a {@link ResponseEntity} containing a list of {@link UserListDTO} representing the user's friends
+     */
     @GetMapping("/friends")
     public ResponseEntity<List<UserListDTO>> getMyFriends(@AuthenticationPrincipal Jwt jwt) {
         Long userId = jwtUtils.extractUserId(jwt);
@@ -52,6 +64,13 @@ public class MyController {
         return ResponseEntity.ok(friends);
     }
 
+    /**
+     * Updates the profile information of the authenticated user.
+     *
+     * @param jwt         the {@link Jwt} access token containing the authenticated user's identity
+     * @param userRequest the {@link UpdateUserRequest} containing the updated profile data
+     * @return a {@link ResponseEntity} containing the {@link UpdateUserResponse} with updated user details
+     */
     @PreAuthorize("isAuthenticated()")
     @PatchMapping
     public ResponseEntity<UpdateUserResponse> updateMe(@AuthenticationPrincipal Jwt jwt,
@@ -62,6 +81,12 @@ public class MyController {
         return ResponseEntity.ok(userResponse);
     }
 
+    /**
+     * Deletes the account of the authenticated user.
+     *
+     * @param jwt the {@link Jwt} access token containing the authenticated user's identity
+     * @return a {@link ResponseEntity} with status 204 (No Content) upon successful deletion
+     */
     @PreAuthorize("isAuthenticated()")
     @DeleteMapping
     public ResponseEntity<Void> deleteMe(@AuthenticationPrincipal Jwt jwt) {

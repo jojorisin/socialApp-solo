@@ -11,6 +11,13 @@ import se.jensen.johanna.socialapp.dto.FriendResponseDTO;
 import se.jensen.johanna.socialapp.service.FriendshipService;
 import se.jensen.johanna.socialapp.util.JwtUtils;
 
+/**
+ * REST controller for managing friendships and friend requests.
+ * Provides endpoints for sending, accepting, rejecting, and deleting friendships
+ * Only for authenticated users
+ */
+
+@PreAuthorize("isAuthenticated()")
 @RestController
 @RequestMapping("/friendships")
 @RequiredArgsConstructor
@@ -18,11 +25,16 @@ public class FriendshipController {
     private final FriendshipService friendshipService;
     private final JwtUtils jwtUtils;
 
+
     /**
      * Sends a friend request to the user with the specified receiverId.
      * The sender is identified via the JWT token.
+     *
+     * @param receiverId the ID of the user who will receive the friend request
+     * @param jwt        the authenticated user's JWT token
+     * @return a ResponseEntity containing the created FriendResponseDTO
      */
-    @PreAuthorize("isAuthenticated()")
+
     @PostMapping("/{receiverId}")
     public ResponseEntity<FriendResponseDTO> sendFriendRequest(@PathVariable
                                                                Long receiverId,
@@ -39,8 +51,12 @@ public class FriendshipController {
     /**
      * Accepts a pending friend request.
      * Verifies that the logged-in user is the intended receiver of the request.
+     *
+     * @param friendshipId the ID of the friendship request to accept
+     * @param jwt          the authenticated user's JWT token
+     * @return a ResponseEntity containing the updated FriendResponseDTO
      */
-    @PreAuthorize("isAuthenticated()")
+
     @PutMapping("/{friendshipId}/accept")
     public ResponseEntity<FriendResponseDTO> acceptFriendRequest(
             @PathVariable Long friendshipId,
@@ -55,7 +71,15 @@ public class FriendshipController {
 
     }
 
-    @PreAuthorize("isAuthenticated")
+    /**
+     * Rejects a pending friend request.
+     * Verifies that the logged-in user is the intended receiver of the request.
+     *
+     * @param friendshipId the ID of the friendship request to reject
+     * @param jwt          the authenticated user's JWT token
+     * @return a ResponseEntity containing the updated FriendResponseDTO
+     */
+
     @PutMapping("/{friendshipId}/reject")
     public ResponseEntity<FriendResponseDTO> rejectFriendRequest(
             @PathVariable Long friendshipId,
@@ -71,8 +95,14 @@ public class FriendshipController {
 
     }
 
+    /**
+     * Deletes an existing friendship or cancels/removes a friend request.
+     *
+     * @param friendshipId the ID of the friendship to delete
+     * @param jwt          the authenticated user's JWT token
+     * @return a ResponseEntity with no content (204 No Content)
+     */
 
-    @PreAuthorize("isAuthenticated()")
     @DeleteMapping("{friendshipId}")
     public ResponseEntity<Void> deleteFriendship(@PathVariable Long friendshipId, @AuthenticationPrincipal Jwt jwt) {
         Long userId = jwtUtils.extractUserId(jwt);

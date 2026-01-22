@@ -10,6 +10,11 @@ import se.jensen.johanna.socialapp.service.UserService;
 
 import java.util.List;
 
+/**
+ * REST controller for administrative user management operations.
+ * All endpoints in this controller require the user to have the 'ADMIN' role.
+ */
+
 @PreAuthorize("hasRole('ADMIN')")
 @RestController
 @RequestMapping("/admin/users")
@@ -17,12 +22,24 @@ import java.util.List;
 public class AdminUserController {
     private final UserService userService;
 
+    /**
+     * Retrieves a list of all users in the system with administrative details.
+     *
+     * @return a {@link ResponseEntity} containing a list of {@link AdminUserDTO} objects.
+     */
     @GetMapping
     public ResponseEntity<List<AdminUserDTO>> getAllUsersAdmin() {
         List<AdminUserDTO> userDTOS = userService.findAllUsersAdmin();
 
         return ResponseEntity.ok(userDTOS);
     }
+
+    /**
+     * Retrieves detailed information for a specific user.
+     *
+     * @param userId the ID of the user to retrieve.
+     * @return a {@link ResponseEntity} containing the {@link AdminUserDTO} of the specified user.
+     */
 
     @GetMapping("/{userId}")
     public ResponseEntity<AdminUserDTO> getUserAdmin(@PathVariable Long userId) {
@@ -31,6 +48,13 @@ public class AdminUserController {
         return ResponseEntity.ok(userDTO);
     }
 
+    /**
+     * Deletes a user from the system.
+     *
+     * @param userId the ID of the user to delete.
+     * @return a {@link ResponseEntity} with 204 No Content status on success.
+     */
+
     @DeleteMapping("/{userId}")
     public ResponseEntity<Void> deleteUser(@PathVariable Long userId) {
         userService.deleteUser(userId);
@@ -38,13 +62,27 @@ public class AdminUserController {
         return ResponseEntity.noContent().build();
     }
 
+    /**
+     * Grants or updates roles for a user.
+     *
+     * @param roleRequest the request object containing role assignment details.
+     * @return a {@link ResponseEntity} containing the {@link RoleResponse}.
+     */
+
     @PatchMapping("/roles")
-    public ResponseEntity<RoleResponse> giveRole(@Valid @RequestBody RoleRequest roleRequest) {
+    public ResponseEntity<RoleResponse> addRole(@Valid @RequestBody RoleRequest roleRequest) {
         RoleResponse roleResponse = userService.addRole(roleRequest);
 
         return ResponseEntity.ok(roleResponse);
     }
 
+    /**
+     * Updates user information from an administrative perspective.
+     *
+     * @param userId      the ID of the user to update.
+     * @param userRequest the request object containing updated user information.
+     * @return a {@link ResponseEntity} containing the {@link AdminUpdateUserResponse}.
+     */
     @PatchMapping("/{userId}")
     public ResponseEntity<AdminUpdateUserResponse> updateUserAdmin(
             @PathVariable Long userId,
