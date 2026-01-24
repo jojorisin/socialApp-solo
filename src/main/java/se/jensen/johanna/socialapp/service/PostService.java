@@ -60,9 +60,7 @@ public class PostService {
      * @throws NotFoundException if the user with the specified ID does not exist
      */
     public Page<PostResponseDTO> findAllPostsForUser(Long userId, Pageable pageable) {
-        if (!userRepository.existsById(userId)) {
-            throw new NotFoundException("User not found");
-        }
+        getUserOrThrow(userId);
         Page<Post> userPostPage = postRepository.findByUser_UserId(userId, pageable);
         return userPostPage.map(postMapper::toPostResponseDTO);
     }
@@ -88,11 +86,8 @@ public class PostService {
      * @return the {@link PostResponseDTO} representing the found post
      * @throws NotFoundException if the post with the specified ID is not found
      */
-
     public PostResponseDTO findPost(Long postId) {
-        Post post = postRepository.findById(postId)
-                .orElseThrow(NotFoundException::new);
-
+        Post post = getPostOrThrow(postId);
         return postMapper.toPostResponseDTO(post);
     }
 
@@ -107,7 +102,7 @@ public class PostService {
 
     public PostResponseDTO addPost(PostRequest postRequest, Long userId) {
         log.info("Trying to add post for user with id={}", userId);
-        User user = userRepository.findById(userId).orElseThrow(NotFoundException::new);
+        User user = getUserOrThrow(userId);
         Post post = postMapper.toPost(postRequest);
         post.setUser(user);
         postRepository.save(post);
@@ -128,14 +123,8 @@ public class PostService {
      */
     public UpdatePostResponseDTO updatePost(PostRequest postRequest, Long postId, Long userId) {
         log.info("Trying to update post with id={} for user with id={}", postId, userId);
-        Post post = postRepository.findById(postId).orElseThrow(() -> {
-            log.warn("Post with id={} not found when trying to update by user with id={}", postId, userId);
-            return new NotFoundException();
-        });
-        if (!post.getUser().getUserId().equals(userId)) {
-            log.warn("User with id={} attempted to modify post with id={} without permission", userId, postId);
-            throw new ForbiddenException("You are not authorized to edit this post");
-        }
+        Post post = getPostOrThrow(postId);
+        validateAuthor(post, userId);
         postMapper.updatePost(postRequest, post);
         postRepository.save(post);
 
@@ -154,14 +143,10 @@ public class PostService {
      */
     public void deletePost(Long postId, Long userId) {
         log.info("Trying to delete post with id={} for user with id={}", postId, userId);
-        Post post = postRepository.findById(postId).orElseThrow(() -> {
-            log.warn("Post with id={} not found when trying to delete by user with id={}", postId, userId);
-            return new NotFoundException();
-        });
-        if (!post.getUser().getUserId().equals(userId)) {
-            log.warn("User with id={} attempted to delete post with id={} without permission", userId, postId);
-            throw new ForbiddenException("You are not authorized to delete this post");
-        }
+        Post post = getPostOrThrow(postId);
+
+        validateAuthor(post, userId);
+
         postRepository.delete(post);
         log.info("Post with id={} deleted for user with id={}", postId, userId);
     }
@@ -176,7 +161,6 @@ public class PostService {
      * @return the {@link AdminUpdatePostResponse} representing the updated post
      * @throws NotFoundException if the post with the specified ID is not found
      */
-
     public AdminUpdatePostResponse updatePostAdmin(
             AdminUpdatePostRequest adminRequest, Long postId) {
         log.info("ADMIN trying to update post with id={}", postId);
@@ -198,7 +182,6 @@ public class PostService {
      * @param postId the ID of the post to delete
      * @throws NotFoundException if the post with the specified ID is not found
      */
-
     public void deletePostAdmin(Long postId) {
         log.info("ADMIN trying to delete post with id={}", postId);
         Post post = postRepository.findById(postId).orElseThrow(() -> {
@@ -208,5 +191,30 @@ public class PostService {
 
         postRepository.delete(post);
         log.info("ADMIN successfully deleted post with id={}", postId);
+    }
+
+
+    private Post getPostOrThrow(Long postId) {
+        return postRepository.findById(postId)
+                .orElseThrow(() -> {
+                    log.warn("Post with id={} not found", postId);
+                    return new NotFoundException("Post with id " + postId + " not found.");
+
+                });
+    }
+
+    private User getUserOrThrow(Long userId) {
+        return userRepository.findById(userId)
+                .orElseThrow(() -> {
+                    log.warn("User with id={} not found", userId);
+                    return new NotFoundException("User with id " + userId + " not found.");
+                });
+    }
+
+    private void validateAuthor(Post post, Long userId) {
+        if (!post.getUser().getUserId().equals(userId)) {
+            log.warn("User with id={} attempted to modify post with id={} without permission", userId, post.getPostId());
+            throw new ForbiddenException("You are not authorized to modify this post.");
+        }
     }
 }

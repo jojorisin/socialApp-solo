@@ -64,15 +64,10 @@ public class UserService {
      * @return the updated user details as an {@link UpdateUserResponse}
      * @throws NotFoundException if the user with the given ID does not exist
      */
-
     public UpdateUserResponse updateUser(UpdateUserRequest userRequest, Long userId) {
         log.info("Trying to update user with id={}", userId);
 
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> {
-                    log.warn("Could not update user - user with id={} not found", userId);
-                    return new NotFoundException();
-                });
+        User user = getUserOrThrow(userId);
         userMapper.updateUser(userRequest, user);
         userRepository.save(user);
 
@@ -87,23 +82,66 @@ public class UserService {
      *
      * @return a list of {@link UserListDTO} objects
      */
-
     public List<UserListDTO> findAllUsers() {
         return userRepository.findAllUsersByRole(Role.MEMBER).stream()
                 .map(userMapper::toUserListDTO).toList();
 
     }
 
+
+    /**
+     * Finds a specific user by their ID and returns standard user data.
+     * Returns only user with 'MEMBER' role for public users
+     *
+     * @param userId the ID of the user to find
+     * @return the user details as a {@link UserDTO}
+     * @throws NotFoundException if the user does not exist
+     */
+    public UserDTO findUser(Long userId) {
+        return userRepository.findUserMemberRole(userId)
+                .map(userMapper::toUserDTO).orElseThrow(NotFoundException::new);
+    }
+
+
+    public HomePageResponse getProfile(Long userId) {
+        UserDTO userDTO = findUser(userId);
+        List<UserListDTO> friends = friendshipService.getFriendsForUser(userId);
+        List<PostResponse> posts = postService.getPostsForCurrentUser(userId);
+
+        return new HomePageResponse(
+                "Profilsida",
+                userDTO.username(),
+                userDTO.profileImagePath(),
+                posts,
+                friends);
+    }
+
+    /**
+     * Deletes a user from the system by their ID.
+     *
+     * @param userId the ID of the user to delete
+     * @throws NotFoundException if the user does not exist
+     */
+    public void deleteUser(Long userId) {
+        log.info("Trying to delete user with id={}", userId);
+        User userToDelete = getUserOrThrow(userId);
+        userRepository.delete(userToDelete);
+        log.info("User with id={} removed", userId);
+    }
+
+    /* ************************** ADMIN METHODS *****************************'  */
+
+
     /**
      * Retrieves a list of all users in the system for administrative purposes.
      *
      * @return a list of {@link AdminUserDTO} objects
      */
-
     public List<AdminUserDTO> findAllUsersAdmin() {
         return userRepository.findAll().stream()
                 .map(userMapper::toAdminUserDTO).toList();
     }
+
 
     /**
      * Finds a specific user by their ID and returns detailed administrative data.
@@ -113,38 +151,9 @@ public class UserService {
      * @throws NotFoundException if the user does not exist
      */
     public AdminUserDTO findUserAdmin(Long userId) {
-        User user = userRepository.findById(userId).orElseThrow(NotFoundException::new);
+        User user = getUserOrThrow(userId);
 
         return userMapper.toAdminUserDTO(user);
-    }
-
-    /**
-     * Finds a specific user by their ID and returns standard user data.
-     *
-     * @param userId the ID of the user to find
-     * @return the user details as a {@link UserDTO}
-     * @throws NotFoundException if the user does not exist
-     */
-    public UserDTO findUser(Long userId) {
-        return userRepository.findById(userId)
-                .map(userMapper::toUserDTO).orElseThrow(NotFoundException::new);
-    }
-
-    /**
-     * Deletes a user from the system by their ID.
-     *
-     * @param userId the ID of the user to delete
-     * @throws NotFoundException if the user does not exist
-     */
-
-    public void deleteUser(Long userId) {
-        log.info("Trying to delete user with id={}", userId);
-        User userToDelete = userRepository.findById(userId).orElseThrow(() -> {
-            log.warn("Could not remove - user with id={} was not found", userId);
-            return new NotFoundException();
-        });
-        userRepository.delete(userToDelete);
-        log.info("User with id={} removed", userId);
     }
 
     /**
@@ -178,16 +187,15 @@ public class UserService {
     public AdminUpdateUserResponse updateUserAdmin(AdminUpdateUserRequest userRequest,
                                                    Long userId) {
         log.info("Admin update initiated for user with id={}", userId);
-        User user = userRepository.findById(userId).orElseThrow(() -> {
-            log.warn("Could not update User - User with id={} not found", userId);
-            return new NotFoundException();
-        });
+        User user = getUserOrThrow(userId);
         userMapper.updateUserAdmin(userRequest, user);
         userRepository.save(user);
 
         return userMapper.toAdminResponse(user);
 
     }
+
+    /* ********************** HELP METHODS *********************** */
 
     /**
      * Validates that the registration details are unique and consistent.
@@ -214,17 +222,12 @@ public class UserService {
     }
 
 
-    public HomePageResponse getProfile(Long userId) {
-        UserDTO userDTO = findUser(userId);
-        List<UserListDTO> friends = friendshipService.getFriendsForUser(userId);
-        List<PostResponse> posts = postService.getPostsForCurrentUser(userId);
-
-        return new HomePageResponse(
-                "Profilsida",
-                userDTO.username(),
-                userDTO.profileImagePath(),
-                posts,
-                friends);
+    private User getUserOrThrow(Long userId) {
+        return userRepository.findById(userId)
+                .orElseThrow(() -> {
+                    log.warn("User with id={} not found", userId);
+                    return new NotFoundException("User with id " + userId + " not found");
+                });
     }
 
 
