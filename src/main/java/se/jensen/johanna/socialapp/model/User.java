@@ -37,7 +37,7 @@ public class User {
     @Column(nullable = false)
     private Role role;
 
-    @Column(name = "profile_image_path")
+    @Column(name = "profile_image_path", length=1000)
     private String profileImagePath;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
