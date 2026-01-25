@@ -18,8 +18,6 @@ import se.jensen.johanna.socialapp.repository.CommentRepository;
 import se.jensen.johanna.socialapp.repository.PostRepository;
 import se.jensen.johanna.socialapp.repository.UserRepository;
 
-import java.util.List;
-
 /**
  * Service class responsible for the business logic of comment management.
  * * Provides functionality for creating, updating, deleting, and retrieving comments,
@@ -109,9 +107,9 @@ public class CommentService {
      * @param commentId ID of comment to fetch replies to
      * @return Returns {@link CommentDTO}
      */
-    public List<CommentDTO> findAllRepliesForComment(Long commentId) {
-        return commentRepository.findByParent_CommentIdOrderByCreatedAtAsc(commentId)
-                .stream().map(commentMapper::toCommentDTO).toList();
+    public Page<CommentDTO> findAllRepliesForComment(Long commentId, Pageable pageable) {
+        return commentRepository.findByParent_CommentIdOrderByCreatedAtAsc(commentId, pageable)
+                .map(commentMapper::toCommentDTO);
     }
 
     /**

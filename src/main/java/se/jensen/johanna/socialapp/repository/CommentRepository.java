@@ -34,7 +34,7 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
      * @param parentId ID of the parent-comment
      * @return List of child-comments in ascending order
      */
-    List<Comment> findByParent_CommentIdOrderByCreatedAtAsc(Long parentId);
+    Page<Comment> findByParent_CommentIdOrderByCreatedAtAsc(Long parentId, Pageable pageable);
 
     Page<Comment> findByPost_postIdAndParentIsNull(Long postId, Pageable pageable);
 }
