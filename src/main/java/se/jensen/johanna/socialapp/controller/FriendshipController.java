@@ -81,16 +81,15 @@ public class FriendshipController {
      */
 
     @PutMapping("/{friendshipId}/reject")
-    public ResponseEntity<FriendResponseDTO> rejectFriendRequest(
+    public ResponseEntity<Void> rejectFriendRequest(
             @PathVariable Long friendshipId,
             @AuthenticationPrincipal Jwt jwt
     ) {
         Long currentUserId = jwtUtils.extractUserId(jwt);
-        FriendResponseDTO friendResponseDTO = friendshipService.
-                rejectFriendRequest(friendshipId, currentUserId);
+        friendshipService.rejectFriendRequest(friendshipId, currentUserId);
 
 
-        return ResponseEntity.ok(friendResponseDTO);
+        return ResponseEntity.noContent().build();
 
 
     }
