@@ -8,8 +8,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import se.jensen.johanna.socialapp.dto.CommentRequest;
 import se.jensen.johanna.socialapp.dto.UpdateCommentResponse;
+import se.jensen.johanna.socialapp.exception.ForbiddenException;
 import se.jensen.johanna.socialapp.exception.NotFoundException;
-import se.jensen.johanna.socialapp.exception.UnauthorizedAccessException;
 import se.jensen.johanna.socialapp.mapper.CommentMapper;
 import se.jensen.johanna.socialapp.model.Comment;
 import se.jensen.johanna.socialapp.model.User;
@@ -32,8 +32,8 @@ class CommentServiceTest {
     private CommentService commentService;
 
     @Test
-    @DisplayName("Should throw UnauthorizedAccessException when user is not owner")
-    void updateComment_ShouldThrowUnauthorized_WhenUserIsNotOwner() {
+    @DisplayName("Should throw ForbiddenException when user is not owner")
+    void updateComment_ShouldThrowForbidden_WhenUserIsNotOwner() {
         //Arrange
         Long commentId = 1L;
         Long wrongUserId = 2L;
@@ -45,7 +45,7 @@ class CommentServiceTest {
         when(commentRepository.findById(commentId)).thenReturn(Optional.of(comment));
 
         //Act & Assert
-        assertThrows(UnauthorizedAccessException.class, () ->
+        assertThrows(ForbiddenException.class, () ->
                 commentService.updateComment(commentId, wrongUserId, new CommentRequest("test"))
         );
 
