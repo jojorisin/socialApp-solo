@@ -6,10 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-import se.jensen.johanna.socialapp.dto.PostRequest;
-import se.jensen.johanna.socialapp.dto.PostResponse;
-import se.jensen.johanna.socialapp.dto.PostResponseDTO;
-import se.jensen.johanna.socialapp.dto.UpdatePostResponseDTO;
+import se.jensen.johanna.socialapp.dto.*;
 import se.jensen.johanna.socialapp.dto.admin.AdminUpdatePostRequest;
 import se.jensen.johanna.socialapp.dto.admin.AdminUpdatePostResponse;
 import se.jensen.johanna.socialapp.exception.ForbiddenException;
@@ -19,8 +16,6 @@ import se.jensen.johanna.socialapp.model.Post;
 import se.jensen.johanna.socialapp.model.User;
 import se.jensen.johanna.socialapp.repository.PostRepository;
 import se.jensen.johanna.socialapp.repository.UserRepository;
-
-import java.util.List;
 
 /**
  * Service class for managing posts in the social application.
@@ -42,12 +37,12 @@ public class PostService {
      * Retrieves all posts in a paginated format, typically ordered by creation date.
      *
      * @param pageable the pagination and sorting information
-     * @return a {@link Page} of {@link PostResponseDTO} containing post details
+     * @return a {@link Page} of {@link PostDTO} containing post and author-details
      */
-    public Page<PostResponseDTO> findAllPosts(Pageable pageable) {
+    public Page<PostDTO> getAllPosts(Pageable pageable) {
         Page<Post> postPage = postRepository.findAll(pageable);
 
-        return postPage.map(postMapper::toPostResponseDTO);
+        return postPage.map(postMapper::toPostDTO);
 
     }
 
@@ -56,39 +51,26 @@ public class PostService {
      *
      * @param userId   the ID of the user whose posts are to be retrieved
      * @param pageable the pagination and sorting information
-     * @return a {@link Page} of {@link PostResponseDTO} for the specified user
+     * @return a {@link Page} of {@link UserPostDTO} containing post-details
      * @throws NotFoundException if the user with the specified ID does not exist
      */
-    public Page<PostResponseDTO> findAllPostsForUser(Long userId, Pageable pageable) {
+    public Page<UserPostDTO> getPostsForUser(Long userId, Pageable pageable) {
         getUserOrThrow(userId);
-        Page<Post> userPostPage = postRepository.findByUser_UserId(userId, pageable);
-        return userPostPage.map(postMapper::toPostResponseDTO);
+        Page<Post> userPosts = postRepository.findByUser_UserId(userId, pageable);
+        return userPosts.map(postMapper::toUserPostDTO);
     }
 
-    /**
-     * Retrieves a list of all posts for the current logged-in user.
-     * Response contains less user information than findAllPostsForUser().
-     *
-     * @param userId the ID of the user whose posts are to be retrieved
-     * @return a {@link List} of {@link PostResponse}
-     */
-    public List<PostResponse> getPostsForCurrentUser(Long userId) {
-        List<Post> userPosts = postRepository.findAllPostsByUserId(userId);
-        return userPosts.stream()
-                .map(postMapper::toPostResponse)
-                .toList();
-    }
 
     /**
      * Finds a single post by its unique identifier.
      *
      * @param postId the ID of the post to retrieve
-     * @return the {@link PostResponseDTO} representing the found post
+     * @return the {@link PostDTO} representing the found post
      * @throws NotFoundException if the post with the specified ID is not found
      */
-    public PostResponseDTO findPost(Long postId) {
+    public PostDTO getPost(Long postId) {
         Post post = getPostOrThrow(postId);
-        return postMapper.toPostResponseDTO(post);
+        return postMapper.toPostDTO(post);
     }
 
     /**
@@ -117,11 +99,11 @@ public class PostService {
      * @param postRequest the updated content of the post
      * @param postId      the ID of the post to update
      * @param userId      the ID of the user requesting the update
-     * @return the {@link UpdatePostResponseDTO} representing the updated post
+     * @return the {@link UpdatePostResponse} representing the updated post
      * @throws NotFoundException  if the post with the specified ID is not found
      * @throws ForbiddenException if the user is not authorized to edit the post
      */
-    public UpdatePostResponseDTO updatePost(PostRequest postRequest, Long postId, Long userId) {
+    public UpdatePostResponse updatePost(PostRequest postRequest, Long postId, Long userId) {
         log.info("Trying to update post with id={} for user with id={}", postId, userId);
         Post post = getPostOrThrow(postId);
         validateAuthor(post, userId);

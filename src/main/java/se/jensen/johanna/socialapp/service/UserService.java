@@ -32,8 +32,6 @@ public class UserService {
     private final UserRepository userRepository;
     private final UserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
-    private final FriendshipService friendshipService;
-    private final PostService postService;
 
 
     /**
@@ -82,7 +80,7 @@ public class UserService {
      *
      * @return a list of {@link UserListDTO} objects
      */
-    public List<UserListDTO> findAllUsers() {
+    public List<UserListDTO> getAllUsers() {
         return userRepository.findAllUsersByRole(Role.MEMBER).stream()
                 .map(userMapper::toUserListDTO).toList();
 
@@ -97,24 +95,11 @@ public class UserService {
      * @return the user details as a {@link UserDTO}
      * @throws NotFoundException if the user does not exist
      */
-    public UserDTO findUser(Long userId) {
+    public UserDTO getUser(Long userId) {
         return userRepository.findUserMemberRole(userId)
                 .map(userMapper::toUserDTO).orElseThrow(NotFoundException::new);
     }
 
-
-    public HomePageResponse getProfile(Long userId) {
-        UserDTO userDTO = findUser(userId);
-        List<UserListDTO> friends = friendshipService.getFriendsForUser(userId);
-        List<PostResponse> posts = postService.getPostsForCurrentUser(userId);
-
-        return new HomePageResponse(
-                "Profilsida",
-                userDTO.username(),
-                userDTO.profileImagePath(),
-                posts,
-                friends);
-    }
 
     /**
      * Deletes a user from the system by their ID.

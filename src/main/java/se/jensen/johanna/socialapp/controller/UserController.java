@@ -1,16 +1,21 @@
 package se.jensen.johanna.socialapp.controller;
 
 import lombok.RequiredArgsConstructor;
+import org.springdoc.core.annotations.ParameterObject;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import se.jensen.johanna.socialapp.dto.HomePageResponse;
 import se.jensen.johanna.socialapp.dto.UserDTO;
 import se.jensen.johanna.socialapp.dto.UserListDTO;
+import se.jensen.johanna.socialapp.dto.UserPostDTO;
 import se.jensen.johanna.socialapp.service.FriendshipService;
+import se.jensen.johanna.socialapp.service.PostService;
 import se.jensen.johanna.socialapp.service.UserService;
 
 import java.util.List;
@@ -26,8 +31,7 @@ import java.util.List;
 public class UserController {
     private final UserService userService;
     private final FriendshipService friendshipService;
-
-    //OBS vilka är för admin vilka för user
+    private final PostService postService;
 
 
     /**
@@ -38,7 +42,7 @@ public class UserController {
      */
     @GetMapping
     public ResponseEntity<List<UserListDTO>> getAllUsers() {
-        List<UserListDTO> users = userService.findAllUsers();
+        List<UserListDTO> users = userService.getAllUsers();
         return ResponseEntity.ok(users);
     }
 
@@ -51,27 +55,20 @@ public class UserController {
 
     @GetMapping("/{userId}")
     public ResponseEntity<UserDTO> getUser(@PathVariable Long userId) {
-        UserDTO userDTO = userService.findUser(userId);
+        UserDTO userDTO = userService.getUser(userId);
         return ResponseEntity.ok(userDTO);
 
     }
 
-    /**
-     * Retrieves the profile/homepage data for a specific user.
-     * Access is restricted to authenticated users.
-     *
-     * @param userId the ID of the user whose profile data is being requested
-     * @return the HomePageResponse containing profile and activity data
-     */
-    @PreAuthorize("isAuthenticated()")
-    @GetMapping("/{userId}/profile")
-    public ResponseEntity<HomePageResponse> getProfile(@PathVariable Long userId) {
+    @GetMapping("/{userId}/posts")
+    public ResponseEntity<Page<UserPostDTO>> getUserPosts(
+            @PathVariable Long userId,
+            @ParameterObject @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
+        Page<UserPostDTO> userPosts = postService.getPostsForUser(userId, pageable);
+        return ResponseEntity.ok(userPosts);
 
-        HomePageResponse homePage = userService.getProfile(userId);
 
-        return ResponseEntity.ok(homePage);
     }
-
 
     /**
      * Retrieves a list of accepted friendships to a specific user
@@ -80,7 +77,7 @@ public class UserController {
      * @return {@link UserListDTO}
      */
     @GetMapping("/{userId}/friends")
-    public ResponseEntity<List<UserListDTO>> getMyFriends(@PathVariable Long userId) {
+    public ResponseEntity<List<UserListDTO>> getUserFriends(@PathVariable Long userId) {
 
         List<UserListDTO> friends = friendshipService.getFriendsForUser(userId);
 

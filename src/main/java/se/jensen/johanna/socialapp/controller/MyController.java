@@ -1,16 +1,19 @@
 package se.jensen.johanna.socialapp.controller;
 
 import lombok.RequiredArgsConstructor;
+import org.springdoc.core.annotations.ParameterObject;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
-import se.jensen.johanna.socialapp.dto.MyFriendRequest;
-import se.jensen.johanna.socialapp.dto.UpdateUserRequest;
-import se.jensen.johanna.socialapp.dto.UpdateUserResponse;
-import se.jensen.johanna.socialapp.dto.UserListDTO;
+import se.jensen.johanna.socialapp.dto.*;
 import se.jensen.johanna.socialapp.service.FriendshipService;
+import se.jensen.johanna.socialapp.service.PostService;
 import se.jensen.johanna.socialapp.service.UserService;
 import se.jensen.johanna.socialapp.util.JwtUtils;
 
@@ -29,13 +32,32 @@ public class MyController {
     private final UserService userService;
     private final FriendshipService friendshipService;
     private final JwtUtils jwtUtils;
+    private final PostService postService;
+
+
+    /**
+     * Retrieves a paginated list of posts belonging to the currently authenticated user.
+     *
+     * @param pageable pagination and sorting information
+     * @param jwt      the {@link Jwt} access token containing the authenticated user's identity
+     * @return a ResponseEntity containing {@link UserPostDTO}
+     */
+    @GetMapping("/posts")
+    public ResponseEntity<Page<UserPostDTO>> getMyPosts(
+            @ParameterObject @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable,
+            @AuthenticationPrincipal Jwt jwt) {
+        Long userId = jwtUtils.extractUserId(jwt);
+        Page<UserPostDTO> myPosts = postService.getPostsForUser(userId, pageable);
+        return ResponseEntity.ok(myPosts);
+
+    }
 
     /**
      * Returns a list of pending friendrequests for the authenticated user
      * Contains a boolean isIncoming, is true if the user is on the receiving end
      * is false if the user is the sender
      *
-     * @param jwt AccessToken containing ID of authenticated user
+     * @param jwt AccessToken containing ID of the authenticated user
      * @return {@link MyFriendRequest}
      */
     @GetMapping("/friend-request")
@@ -71,7 +93,6 @@ public class MyController {
      * @param userRequest the {@link UpdateUserRequest} containing the updated profile data
      * @return a {@link ResponseEntity} containing the {@link UpdateUserResponse} with updated user details
      */
-    @PreAuthorize("isAuthenticated()")
     @PatchMapping
     public ResponseEntity<UpdateUserResponse> updateMe(@AuthenticationPrincipal Jwt jwt,
                                                        @RequestBody UpdateUserRequest userRequest) {
@@ -87,7 +108,6 @@ public class MyController {
      * @param jwt the {@link Jwt} access token containing the authenticated user's identity
      * @return a {@link ResponseEntity} with status 204 (No Content) upon successful deletion
      */
-    @PreAuthorize("isAuthenticated()")
     @DeleteMapping
     public ResponseEntity<Void> deleteMe(@AuthenticationPrincipal Jwt jwt) {
         Long userId = jwtUtils.extractUserId(jwt);
@@ -98,5 +118,6 @@ public class MyController {
 
 
     }
+
 
 }

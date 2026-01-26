@@ -33,7 +33,5 @@ build/
 .vscode/
 
 # Lokala inställningar och hemligheter
-application-local.properties
-.env
 application-test.properties
 .env

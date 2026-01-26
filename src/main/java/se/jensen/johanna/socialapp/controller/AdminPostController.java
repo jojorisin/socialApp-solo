@@ -10,7 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.lang.NonNull;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-import se.jensen.johanna.socialapp.dto.PostResponseDTO;
+import se.jensen.johanna.socialapp.dto.PostDTO;
 import se.jensen.johanna.socialapp.dto.admin.AdminUpdatePostRequest;
 import se.jensen.johanna.socialapp.dto.admin.AdminUpdatePostResponse;
 import se.jensen.johanna.socialapp.service.PostService;
@@ -33,13 +33,13 @@ public class AdminPostController {
      * Retrieves a specific post by its unique identifier.
      *
      * @param postId the ID of the post to retrieve.
-     * @return a {@link ResponseEntity} containing the {@link PostResponseDTO} if found.
+     * @return a {@link ResponseEntity} containing the {@link PostDTO} if found.
      */
 
     @GetMapping("/{postId}")
-    public ResponseEntity<PostResponseDTO> getPost(@PathVariable
-                                                   Long postId) {
-        PostResponseDTO postResponseDTOS = postService.findPost(postId);
+    public ResponseEntity<PostDTO> getPost(@PathVariable
+                                           Long postId) {
+        PostDTO postResponseDTOS = postService.getPost(postId);
 
         return ResponseEntity.ok(postResponseDTOS);
 
@@ -49,15 +49,15 @@ public class AdminPostController {
      * Retrieves a paginated list of all posts in the system.
      *
      * @param pageable pagination and sorting information (default: 10 items, sorted by createdAt descending).
-     * @return a {@link ResponseEntity} containing a {@link Page} of {@link PostResponseDTO}.
+     * @return a {@link ResponseEntity} containing a {@link Page} of {@link PostDTO}.
      */
     @GetMapping
-    public @NonNull ResponseEntity<Page<PostResponseDTO>> getAllPostsAdmin(
+    public @NonNull ResponseEntity<Page<PostDTO>> getAllPostsAdmin(
             @ParameterObject @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC)
             Pageable pageable
     ) {
-        Page<PostResponseDTO> postResponseDTOS = postService.findAllPosts(pageable);
-        return ResponseEntity.ok(postResponseDTOS);
+        Page<PostDTO> postDTOS = postService.getAllPosts(pageable);
+        return ResponseEntity.ok(postDTOS);
     }
 
     /**

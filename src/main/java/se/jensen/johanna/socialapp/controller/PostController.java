@@ -10,18 +10,16 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.lang.NonNull;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
+import se.jensen.johanna.socialapp.dto.PostDTO;
 import se.jensen.johanna.socialapp.dto.PostRequest;
 import se.jensen.johanna.socialapp.dto.PostResponseDTO;
-import se.jensen.johanna.socialapp.dto.UpdatePostResponseDTO;
+import se.jensen.johanna.socialapp.dto.UpdatePostResponse;
 import se.jensen.johanna.socialapp.service.PostService;
 import se.jensen.johanna.socialapp.util.JwtUtils;
-
-import java.util.Optional;
 
 /**
  * Controller for handling operations related to posts in the system.
@@ -39,25 +37,19 @@ public class PostController {
 
     /**
      * Retrieves a paginated list of all posts, sorted by creation date in descending order.
-     * Optional variable of userId retrieves all posts from that user
      *
      * @param pageable the pagination and sorting information provided for the request,
      *                 including page size, page number, and sort order.
-     * @return a ResponseEntity containing a paginated list of PostResponseDTO objects.
+     * @return a ResponseEntity containing a paginated list of PostDTO.
      */
-    @GetMapping({"", "/user/{userId}"})
-    public @NonNull ResponseEntity<Page<PostResponseDTO>> getAllPosts(
-            @PathVariable(name = "userId", required = false) Optional<Long> userId,
+    @GetMapping
+    public ResponseEntity<Page<PostDTO>> getAllPosts(
             @ParameterObject @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC)
             Pageable pageable
     ) {
+        Page<PostDTO> postDTOS = postService.getAllPosts(pageable);
 
-        Page<PostResponseDTO> postResponseDTOS = userId
-                .map(id -> postService.findAllPostsForUser(id, pageable))
-                .orElseGet(() -> postService.findAllPosts(pageable));
-
-
-        return ResponseEntity.ok(postResponseDTOS);
+        return ResponseEntity.ok(postDTOS);
 
     }
 
@@ -65,13 +57,13 @@ public class PostController {
      * Retrieves a specific post by its ID.
      *
      * @param postId The unique identifier of the post to fetch.
-     * @return A ResponseEntity containing the {@link PostResponseDTO}.
+     * @return A ResponseEntity containing the {@link PostDTO}.
      */
 
     @GetMapping("/{postId}")
-    public ResponseEntity<PostResponseDTO> getPost(@PathVariable Long postId) {
-        PostResponseDTO postResponseDto = postService.findPost(postId);
-        return ResponseEntity.ok(postResponseDto);
+    public ResponseEntity<PostDTO> getPost(@PathVariable Long postId) {
+        PostDTO postDTO = postService.getPost(postId);
+        return ResponseEntity.ok(postDTO);
     }
 
     /**
@@ -100,19 +92,19 @@ public class PostController {
      *
      * @param jwt         The JWT of the authenticated user.
      * @param postId      The ID of the post to update.
-     * @param postRequest The updated post data.
-     * @return A {@link ResponseEntity} containing the {@link UpdatePostResponseDTO}.
+     * @param postRequest The updated post-data.
+     * @return A {@link ResponseEntity} containing the {@link UpdatePostResponse}.
      */
     @PreAuthorize("isAuthenticated()")
     @PatchMapping("/{postId}")
-    public ResponseEntity<UpdatePostResponseDTO> editPost(@AuthenticationPrincipal
-                                                          Jwt jwt,
-                                                          @PathVariable Long postId,
-                                                          @RequestBody @Valid PostRequest postRequest) {
+    public ResponseEntity<UpdatePostResponse> editPost(@AuthenticationPrincipal
+                                                       Jwt jwt,
+                                                       @PathVariable Long postId,
+                                                       @RequestBody @Valid PostRequest postRequest) {
 
         Long userId = jwtUtils.extractUserId(jwt);
 
-        UpdatePostResponseDTO postResponse = postService.updatePost(
+        UpdatePostResponse postResponse = postService.updatePost(
                 postRequest,
                 postId,
                 userId);
