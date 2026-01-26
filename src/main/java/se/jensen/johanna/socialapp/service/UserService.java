@@ -58,6 +58,17 @@ public class UserService {
     }
 
     /**
+     * Retrieves the authenticated user
+     *
+     * @param userId ID of aiuthenticated user
+     * @return {@link MyDTO} A detailed view of the authenticated user
+     */
+    public MyDTO getAuthenticatedUser(Long userId) {
+        User user = getUserOrThrow(userId);
+        return userMapper.toMyDTO(user);
+    }
+
+    /**
      * Updates an existing user's information.
      *
      * @param userRequest the request object containing updated user details
