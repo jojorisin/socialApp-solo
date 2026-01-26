@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.*;
 import se.jensen.johanna.socialapp.dto.*;
 import se.jensen.johanna.socialapp.service.CommentService;
 import se.jensen.johanna.socialapp.util.JwtUtils;
-import java.util.List;
+
 
 /**
  * Controller handling all operations related to comments
@@ -118,10 +118,13 @@ public class CommentController {
      * @return List of commentDtos with replies
      */
     @GetMapping("/comments/{commentId}/replies")
-    public ResponseEntity<List<CommentDTO>> getAllRepliesForComment(
+    public ResponseEntity<Page<CommentDTO>> getAllRepliesForComment(
             @PathVariable
-            Long commentId) {
-        List<CommentDTO> replies = commentService.findAllRepliesForComment(commentId);
+            Long commentId,
+            @ParameterObject
+            @PageableDefault (size = 5,
+            sort = "createdAt", direction = Sort.Direction.ASC) Pageable pageable) {
+        Page<CommentDTO> replies = commentService.findAllRepliesForComment(commentId, pageable);
 
         return ResponseEntity.ok(replies);
 
