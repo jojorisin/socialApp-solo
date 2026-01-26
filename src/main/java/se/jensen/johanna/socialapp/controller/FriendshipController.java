@@ -8,6 +8,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 import se.jensen.johanna.socialapp.dto.FriendResponseDTO;
+import se.jensen.johanna.socialapp.dto.FriendshipStatusDTO;
 import se.jensen.johanna.socialapp.service.FriendshipService;
 import se.jensen.johanna.socialapp.util.JwtUtils;
 
@@ -110,6 +111,22 @@ public class FriendshipController {
 
         return ResponseEntity.noContent().build();
 
+    }
+
+    /**
+     * Checks the friendship status between the logged-in user and a target user.
+     * Returns 200 OK with status details, or 204 No Content if no relationship exists.
+     */
+    @GetMapping("/status/{targetUserId}")
+    public ResponseEntity<FriendshipStatusDTO> getFriendshipStatus(@PathVariable Long targetUserId, @AuthenticationPrincipal Jwt jwt) {
+        Long currentUserId = jwtUtils.extractUserId(jwt);
+        FriendshipStatusDTO statusDTO = friendshipService.getFriendshipStatus(currentUserId, targetUserId);
+
+        if (statusDTO == null) {
+            return ResponseEntity.noContent().build();
+        }
+
+        return ResponseEntity.ok(statusDTO);
     }
 
 }

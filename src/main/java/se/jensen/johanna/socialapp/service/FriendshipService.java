@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import se.jensen.johanna.socialapp.dto.FriendResponseDTO;
+import se.jensen.johanna.socialapp.dto.FriendshipStatusDTO;
 import se.jensen.johanna.socialapp.dto.MyFriendRequest;
 import se.jensen.johanna.socialapp.dto.UserListDTO;
 import se.jensen.johanna.socialapp.exception.ForbiddenException;
@@ -21,6 +22,7 @@ import se.jensen.johanna.socialapp.repository.UserRepository;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Service class for managing friendship relations between users in the application.
@@ -231,6 +233,24 @@ public class FriendshipService {
         }
         return friendRequests;
 
+    }
+
+    /**
+     * Retrieves the friendship status between the current user and a target user.
+     * Used to determine UI state (Add Friend, Cancel Request, Accept/Reject, Unfriend).
+     */
+    public FriendshipStatusDTO getFriendshipStatus(Long currentUserId, Long targetUserId) {
+        List<Friendship> friendships = friendshipRepository.findFriendshipBetween(currentUserId, targetUserId);
+
+        if (friendships.isEmpty()) {
+            return null; // No relationship exists
+        }
+
+        // If multiple exist due to bad data, we just take the first one to avoid crashing
+        Friendship f = friendships.get(0);
+        boolean isIncoming = f.getReceiver().getUserId().equals(currentUserId);
+
+        return new FriendshipStatusDTO(f.getFriendshipId(), f.getStatus(), isIncoming);
     }
 
     /**
