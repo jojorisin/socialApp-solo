@@ -22,7 +22,6 @@ import se.jensen.johanna.socialapp.repository.UserRepository;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 /**
  * Service class for managing friendship relations between users in the application.
@@ -119,6 +118,8 @@ public class FriendshipService {
             throw new ForbiddenException("You are not authorized to accept this request.");
         }
 
+
+
         // Validation: Cannot accept a request that has been rejected
         if (friendship.getStatus().equals(FriendshipStatus.REJECTED)) {
             log.warn("User with id={} attempted to accept rejected friend request with id={}", currentUserId, friendshipId);
@@ -179,7 +180,7 @@ public class FriendshipService {
         friendship.setStatus(FriendshipStatus.REJECTED);
         log.info("Friend request with id={} successfully rejected by user with id={}", friendshipId, currentUserId);
 
-
+        // Deletes the friendship relation in the database.
         friendshipRepository.delete(friendship);
 
 
@@ -248,7 +249,7 @@ public class FriendshipService {
 
         // If multiple exist due to bad data, we just take the first one to avoid crashing
         Friendship f = friendships.get(0);
-        boolean isIncoming = f.getReceiver().getUserId().equals(currentUserId);
+        boolean isIncoming = f.getStatus() == FriendshipStatus.PENDING && f.getReceiver().getUserId().equals(currentUserId);
 
         return new FriendshipStatusDTO(f.getFriendshipId(), f.getStatus(), isIncoming);
     }
