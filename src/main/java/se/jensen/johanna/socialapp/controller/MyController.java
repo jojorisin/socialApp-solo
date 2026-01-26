@@ -35,6 +35,13 @@ public class MyController {
     private final PostService postService;
 
 
+    @GetMapping
+    public ResponseEntity<MyDTO> getMe(@AuthenticationPrincipal Jwt jwt) {
+        Long userId = jwtUtils.extractUserId(jwt);
+        MyDTO myDTO = userService.getAuthenticatedUser(userId);
+        return ResponseEntity.ok(myDTO);
+    }
+
     /**
      * Retrieves a paginated list of posts belonging to the currently authenticated user.
      *
