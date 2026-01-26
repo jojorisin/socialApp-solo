@@ -1,6 +1,7 @@
 package se.jensen.johanna.socialapp.model;
 
 import jakarta.persistence.*;
+
 import java.time.LocalDateTime;
 
 @Entity
@@ -34,9 +35,6 @@ public class Friendship {
         return friendshipId;
     }
 
-    public void setFriendshipId(Long friendshipId) {
-        this.friendshipId = friendshipId;
-    }
 
     public User getSender() {
         return sender;

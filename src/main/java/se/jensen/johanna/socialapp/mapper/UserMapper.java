@@ -20,7 +20,6 @@ public interface UserMapper {
     @Mapping(target = "username", ignore = true)
     void updateUser(UpdateUserRequest userRequest, @MappingTarget User user);
 
-    UserWithPostsDTO toUserWithPosts(User user);
 
     UpdateUserResponse toUpdateUserResponse(User user);
 

@@ -1,13 +1,18 @@
 package se.jensen.johanna.socialapp.security;
 
-import se.jensen.johanna.socialapp.model.Role;
-import se.jensen.johanna.socialapp.model.User;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
+import se.jensen.johanna.socialapp.model.Role;
+import se.jensen.johanna.socialapp.model.User;
 
 import java.util.Collection;
 import java.util.List;
+
+/**
+ * Custom implementation of {@link UserDetails} for Spring Security.
+ * This class wraps the domain {@link User} entity to provide authentication and authorization information.
+ */
 
 public class MyUserDetails implements UserDetails {
     private final User user;
