@@ -7,8 +7,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import se.jensen.johanna.socialapp.dto.*;
-import se.jensen.johanna.socialapp.dto.admin.AdminUpdatePostRequest;
-import se.jensen.johanna.socialapp.dto.admin.AdminUpdatePostResponse;
 import se.jensen.johanna.socialapp.exception.ForbiddenException;
 import se.jensen.johanna.socialapp.exception.NotFoundException;
 import se.jensen.johanna.socialapp.mapper.PostMapper;
@@ -138,24 +136,24 @@ public class PostService {
     /**
      * Administrative method to update any post regardless of ownership.
      *
-     * @param adminRequest the updated post data for administration
-     * @param postId       the ID of the post to update
-     * @return the {@link AdminUpdatePostResponse} representing the updated post
+     * @param postRequest the updated post-data for administration
+     * @param postId      the ID of the post to update
+     * @return the {@link UpdatePostResponse} representing the updated post
      * @throws NotFoundException if the post with the specified ID is not found
      */
-    public AdminUpdatePostResponse updatePostAdmin(
-            AdminUpdatePostRequest adminRequest, Long postId) {
+    public UpdatePostResponse updatePostAdmin(
+            PostRequest postRequest, Long postId) {
         log.info("ADMIN trying to update post with id={}", postId);
         Post post = postRepository.findById(postId).orElseThrow(() -> {
             log.warn("ADMIN was unable to update post with id={}", postId);
             return new NotFoundException();
         });
 
-        postMapper.updatePostAdmin(adminRequest, post);
+        postMapper.updatePost(postRequest, post);
         postRepository.save(post);
         log.info("ADMIN successfully updated post with id={}", postId);
 
-        return postMapper.toAdminUpdateResponse(post);
+        return postMapper.toUpdatePostResponseDTO(post);
     }
 
     /**

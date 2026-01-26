@@ -3,10 +3,13 @@ package se.jensen.johanna.socialapp.service;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import se.jensen.johanna.socialapp.dto.*;
-import se.jensen.johanna.socialapp.dto.admin.*;
+import se.jensen.johanna.socialapp.dto.admin.RoleRequest;
+import se.jensen.johanna.socialapp.dto.admin.RoleResponse;
 import se.jensen.johanna.socialapp.exception.NotFoundException;
 import se.jensen.johanna.socialapp.exception.NotUniqueException;
 import se.jensen.johanna.socialapp.exception.PasswordMisMatchException;
@@ -118,27 +121,13 @@ public class UserService {
 
 
     /**
-     * Retrieves a list of all users in the system for administrative purposes.
+     * Retrieves a list of all Users with both MEMBER and ADMIN role
      *
-     * @return a list of {@link AdminUserDTO} objects
+     * @param pageable Paginates list
+     * @return {@link AdminUserDTO} a detailed list of users
      */
-    public List<AdminUserDTO> findAllUsersAdmin() {
-        return userRepository.findAll().stream()
-                .map(userMapper::toAdminUserDTO).toList();
-    }
-
-
-    /**
-     * Finds a specific user by their ID and returns detailed administrative data.
-     *
-     * @param userId the ID of the user to find
-     * @return the user details as an {@link AdminUserDTO}
-     * @throws NotFoundException if the user does not exist
-     */
-    public AdminUserDTO findUserAdmin(Long userId) {
-        User user = getUserOrThrow(userId);
-
-        return userMapper.toAdminUserDTO(user);
+    public Page<AdminUserDTO> getAllUsersAdmin(Pageable pageable) {
+        return userRepository.findAll(pageable).map(userMapper::toAdminUserDTO);
     }
 
     /**
@@ -165,22 +154,22 @@ public class UserService {
      *
      * @param userRequest the request object containing updated user details for admin
      * @param userId      the ID of the user to update
-     * @return the updated user data as an {@link AdminUpdateUserResponse}
+     * @return the updated user data as an {@link UpdateUserResponse}
      * @throws NotFoundException if the user does not exist
      */
-
-    public AdminUpdateUserResponse updateUserAdmin(AdminUpdateUserRequest userRequest,
-                                                   Long userId) {
+    public UpdateUserResponse updateUserAdmin(UpdateUserRequest userRequest,
+                                              Long userId) {
         log.info("Admin update initiated for user with id={}", userId);
         User user = getUserOrThrow(userId);
-        userMapper.updateUserAdmin(userRequest, user);
+        userMapper.updateUser(userRequest, user);
         userRepository.save(user);
 
-        return userMapper.toAdminResponse(user);
+        return userMapper.toUpdateUserResponse(user);
 
     }
 
     /* ********************** HELP METHODS *********************** */
+
 
     /**
      * Validates that the registration details are unique and consistent.
@@ -207,6 +196,12 @@ public class UserService {
     }
 
 
+    /**
+     * Retrieves a user and throws an exception if not found
+     *
+     * @param userId ID of user to fetch
+     * @return User entity
+     */
     private User getUserOrThrow(Long userId) {
         return userRepository.findById(userId)
                 .orElseThrow(() -> {
