@@ -2,8 +2,6 @@ package se.jensen.johanna.socialapp.mapper;
 
 import org.mapstruct.*;
 import se.jensen.johanna.socialapp.dto.*;
-import se.jensen.johanna.socialapp.dto.admin.AdminUpdatePostRequest;
-import se.jensen.johanna.socialapp.dto.admin.AdminUpdatePostResponse;
 import se.jensen.johanna.socialapp.model.Post;
 
 @Mapper(componentModel = "spring", uses = CommentMapper.class, imports = {java.time.LocalDateTime.class})
@@ -35,10 +33,6 @@ public interface PostMapper {
     @Mapping(target = "userId", source = "post.user.userId")
     UpdatePostResponse toUpdatePostResponseDTO(Post post);
 
-    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
-    void updatePostAdmin(AdminUpdatePostRequest adminRequest, @MappingTarget Post post);
 
-    @Mapping(target = "userId", source = "post.user.userId")
-    AdminUpdatePostResponse toAdminUpdateResponse(Post post);
 }
 

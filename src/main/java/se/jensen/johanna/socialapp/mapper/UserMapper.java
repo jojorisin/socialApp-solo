@@ -2,9 +2,6 @@ package se.jensen.johanna.socialapp.mapper;
 
 import org.mapstruct.*;
 import se.jensen.johanna.socialapp.dto.*;
-import se.jensen.johanna.socialapp.dto.admin.AdminUpdateUserRequest;
-import se.jensen.johanna.socialapp.dto.admin.AdminUpdateUserResponse;
-import se.jensen.johanna.socialapp.dto.admin.AdminUserDTO;
 import se.jensen.johanna.socialapp.model.Role;
 import se.jensen.johanna.socialapp.model.User;
 
@@ -27,10 +24,6 @@ public interface UserMapper {
     @Mapping(target = "password", source = "hashedPw")
     User toUser(RegisterUserRequest registerUserRequest, String hashedPw, Role role);
 
-    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
-    void updateUserAdmin(AdminUpdateUserRequest userRequest, @MappingTarget User user);
-
-    AdminUpdateUserResponse toAdminResponse(User user);
-
     AdminUserDTO toAdminUserDTO(User user);
+
 }

@@ -152,6 +152,33 @@ public class CommentService {
         log.info("User with id={} successfully deleted comment with id={}", userId, commentId);
     }
 
+    /* ************************ ADMIN METHODS ********************** */
+
+
+    /**
+     * Admin-method to edit a comment
+     *
+     * @param commentId      ID of comment to edit
+     * @param commentRequest Content of the update
+     * @return {@link UpdateCommentResponse} The new edited post
+     */
+    public UpdateCommentResponse editComment(Long commentId, CommentRequest commentRequest) {
+        Comment comment = getCommentOrThrow(commentId);
+        commentMapper.updateComment(commentRequest, comment);
+        commentRepository.save(comment);
+        return commentMapper.toUpdateCommentResponse(comment);
+
+    }
+
+    /**
+     * Admin-method to delete a comment
+     *
+     * @param commentId ID of comment to delete
+     */
+    public void deleteComment(Long commentId) {
+        Comment comment = getCommentOrThrow(commentId);
+        commentRepository.delete(comment);
+    }
 
     /**
      * Helper method to fetch a comment from the repository or throw a {@link NotFoundException}.
@@ -186,6 +213,12 @@ public class CommentService {
 
     }
 
+    /**
+     * Help method that retrieves a user and throws an exception if not found
+     *
+     * @param userId ID of user to fetch
+     * @return User entity
+     */
     private User getUserOrThrow(Long userId) {
         return userRepository.findById(userId)
                 .orElseThrow(() -> {
@@ -194,6 +227,12 @@ public class CommentService {
                 });
     }
 
+    /**
+     * Help method that retrieves a post and throws an exception if not found
+     *
+     * @param postId ID of post to fetch
+     * @return Post entity
+     */
     private Post getPostOrThrow(Long postId) {
         return postRepository.findById(postId)
                 .orElseThrow(() -> {
