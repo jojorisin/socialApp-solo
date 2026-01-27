@@ -37,7 +37,7 @@ public class User {
     @Column(nullable = false)
     private Role role;
 
-    @Column(name = "profile_image_path", length=1000)
+    @Column(name = "profile_image_path", length = 1000)
     private String profileImagePath;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -47,7 +47,4 @@ public class User {
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Comment> comments = new ArrayList<>();
 
-//
-//    @ManyToMany(mappedBy = "sender")
-//    private List<Friendship> friendships = new ArrayList<>();
 }

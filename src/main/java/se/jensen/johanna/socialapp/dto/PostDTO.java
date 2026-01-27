@@ -6,6 +6,7 @@ public record PostDTO(
         Long postId,
         Long userId,
         String username,
+        String profileImagePath,
         String text,
         LocalDateTime createdAt,
         LocalDateTime updatedAt
