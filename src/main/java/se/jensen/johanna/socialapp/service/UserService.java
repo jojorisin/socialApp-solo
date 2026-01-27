@@ -37,6 +37,11 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
 
 
+    public Page<UserDTO> searchUsers(String username, Pageable pageable) {
+        return userRepository.findByUsernameContainingIgnoreCase(username, pageable).map(userMapper::toUserDTO);
+
+    }
+
     /**
      * Registers a new user in the system.
      * Validates credentials, hashes the password, and assigns the default MEMBER role.

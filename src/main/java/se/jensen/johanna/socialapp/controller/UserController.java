@@ -7,10 +7,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import se.jensen.johanna.socialapp.dto.UserDTO;
 import se.jensen.johanna.socialapp.dto.UserListDTO;
 import se.jensen.johanna.socialapp.dto.UserPostDTO;
@@ -33,6 +30,26 @@ public class UserController {
     private final FriendshipService friendshipService;
     private final PostService postService;
 
+    /**
+     * Searches for users by their username with support for pagination.
+     * * <p>
+     * * The search is case-insensitive and matches any username that contains
+     * * the provided search string. Results are returned in a paginated format
+     * * to ensure high performance and low network overhead.
+     * * </p>
+     *
+     * @param username Content to search
+     * @param pageable Pagination and sorting information
+     * @return Paginated list of UserDTO
+     */
+    @GetMapping("/search")
+    public ResponseEntity<Page<UserDTO>> searchUsers(
+            @RequestParam("q") String username,
+            @ParameterObject @PageableDefault(size = 10, sort = "username", direction = Sort.Direction.ASC) Pageable pageable) {
+
+        Page<UserDTO> userDtos = userService.searchUsers(username, pageable);
+        return ResponseEntity.ok(userDtos);
+    }
 
     /**
      * Retrieves a list of all users with the MEMBER role.

@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
 @Entity
+@Table(name = "friendships")
 public class Friendship {
 
     @Id
@@ -12,9 +13,11 @@ public class Friendship {
     private Long friendshipId;
 
     @ManyToOne
+    @JoinColumn(name = "sender_id")
     private User sender;
 
     @ManyToOne
+    @JoinColumn(name = "receiver_id")
     private User receiver;
 
     @Enumerated(EnumType.STRING)
