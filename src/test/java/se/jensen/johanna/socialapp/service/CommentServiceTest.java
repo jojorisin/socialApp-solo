@@ -1,5 +1,6 @@
 package se.jensen.johanna.socialapp.service;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -31,22 +32,36 @@ class CommentServiceTest {
     @InjectMocks
     private CommentService commentService;
 
+    private Comment existingComment;
+    private User owner;
+    private CommentRequest commentRequest;
+
+    @BeforeEach
+    void setUp() {
+        owner = new User();
+        owner.setUserId(1L);
+        existingComment = new Comment();
+        existingComment.setUser(owner);
+        existingComment.setCommentId(2L);
+        commentRequest = new CommentRequest("Updated Content");
+    }
+
     @Test
     @DisplayName("Should throw ForbiddenException when user is not owner")
     void updateComment_ShouldThrowForbidden_WhenUserIsNotOwner() {
         //Arrange
-        Long commentId = 1L;
         Long wrongUserId = 2L;
-        User owner = new User();
-        owner.setUserId(3L);
-        Comment comment = new Comment();
-        comment.setUser(owner);
 
-        when(commentRepository.findById(commentId)).thenReturn(Optional.of(comment));
+
+        when(commentRepository.findById(existingComment.getCommentId()))
+                .thenReturn(Optional.of(existingComment));
 
         //Act & Assert
         assertThrows(ForbiddenException.class, () ->
-                commentService.updateComment(commentId, wrongUserId, new CommentRequest("test"))
+                commentService.updateComment(
+                        existingComment.getCommentId(),
+                        wrongUserId,
+                        commentRequest)
         );
 
         //Verify comment is never saved
@@ -56,30 +71,24 @@ class CommentServiceTest {
     @Test
     @DisplayName("Should update comment when user is owner")
     void updateComment_ShouldUpdateComment_WhenUserIsOwner() {
-        //Arrange
-        Long commentId = 1L;
-        Long ownerId = 2L;
-        User owner = new User();
-        owner.setUserId(ownerId);
-        Comment commentToUpdate = new Comment();
-        commentToUpdate.setUser(owner);
-        CommentRequest commentRequest = new CommentRequest("test");
 
 
-        when(commentRepository.findById(commentId)).thenReturn(Optional.of(commentToUpdate));
-        UpdateCommentResponse mockResponse = new UpdateCommentResponse("test", LocalDateTime.now());
-        when(commentMapper.toUpdateCommentResponse(commentToUpdate)).thenReturn(mockResponse);
+        when(commentRepository.findById(existingComment.getCommentId())).thenReturn(Optional.of(existingComment));
+        UpdateCommentResponse mockResponse = new UpdateCommentResponse(
+                commentRequest.text(), LocalDateTime.now());
+        when(commentMapper.toUpdateCommentResponse(existingComment)).thenReturn(mockResponse);
 
         //Act
-        UpdateCommentResponse result = commentService.updateComment(commentId, ownerId, commentRequest);
+        UpdateCommentResponse result = commentService.updateComment(
+                existingComment.getCommentId(), owner.getUserId(), commentRequest);
 
         //Assert
         assertNotNull(result);
-        assertEquals("test", result.text());
+        assertEquals(commentRequest.text(), result.text());
 
         //Verify comment is saved and updated
-        verify(commentRepository).save(commentToUpdate);
-        verify(commentMapper).updateComment(commentRequest, commentToUpdate);
+        verify(commentRepository).save(existingComment);
+        verify(commentMapper).updateComment(commentRequest, existingComment);
 
     }
 
@@ -92,11 +101,11 @@ class CommentServiceTest {
 
         //Act & Assert
         assertThrows(NotFoundException.class, () -> commentService.updateComment(
-                nonExistingCommentId, 1L, new CommentRequest("test")));
+                nonExistingCommentId, owner.getUserId(), commentRequest));
 
-        //Verify comment is never saved
+        //Verify comment is never saved and mapper is never used
+        verifyNoInteractions(commentMapper);
         verify(commentRepository, never()).save(any(Comment.class));
-        verify(commentMapper, never()).updateComment(any(CommentRequest.class), any(Comment.class));
 
 
     }

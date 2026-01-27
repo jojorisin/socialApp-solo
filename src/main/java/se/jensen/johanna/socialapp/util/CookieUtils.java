@@ -20,7 +20,7 @@ public class CookieUtils {
         return ResponseCookie.from("refreshToken", refreshToken)
                 .httpOnly(true)
                 .secure(cookieSecure)
-                .path("/auth")
+                .path("/")
                 .maxAge(refreshTokenDurationMs / 1000)
                 .sameSite(sameSite)
                 .build();
@@ -28,7 +28,7 @@ public class CookieUtils {
 
     public ResponseCookie getCleanResponseCookie() {
         return ResponseCookie.from("refreshToken", "")
-                .path("/auth")
+                .path("/")
                 .maxAge(0)
                 .httpOnly(true)
                 .secure(cookieSecure)
