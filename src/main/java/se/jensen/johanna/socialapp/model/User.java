@@ -8,6 +8,12 @@ import lombok.Setter;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Represents a user within the social application.
+ * This entity stores authentication details, profile information,
+ * and maintains relationships with posts and comments.
+ */
+
 @Entity
 @Getter
 @Setter

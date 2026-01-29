@@ -11,7 +11,6 @@ import se.jensen.johanna.socialapp.dto.UserListDTO;
 import se.jensen.johanna.socialapp.exception.ForbiddenException;
 import se.jensen.johanna.socialapp.exception.IllegalFriendshipStateException;
 import se.jensen.johanna.socialapp.exception.NotFoundException;
-import se.jensen.johanna.socialapp.exception.UnauthorizedAccessException;
 import se.jensen.johanna.socialapp.mapper.FriendshipMapper;
 import se.jensen.johanna.socialapp.mapper.UserMapper;
 import se.jensen.johanna.socialapp.model.Friendship;
@@ -97,7 +96,7 @@ public class FriendshipService {
      * @param currentUserId the ID of the authenticated user attempting the action
      * @return a {@link FriendResponseDTO} with the updated status (ACCEPTED)
      * @throws NotFoundException               if the friend request is not found
-     * @throws UnauthorizedAccessException     if the current user is not the receiver of the request
+     * @throws ForbiddenException              if the current user is not the receiver of the request
      * @throws IllegalFriendshipStateException if the request has already been accepted or rejected
      */
 
@@ -117,7 +116,6 @@ public class FriendshipService {
             log.warn("User with id={} attempted to accept friend request with id={} but is not the receiver", currentUserId, friendshipId);
             throw new ForbiddenException("You are not authorized to accept this request.");
         }
-
 
 
         // Validation: Cannot accept a request that has been rejected
@@ -147,7 +145,7 @@ public class FriendshipService {
      * @param friendshipId  the ID of the friendship relation to reject
      * @param currentUserId the ID of the authenticated user attempting the action
      * @throws NotFoundException               if the friend request is not found
-     * @throws UnauthorizedAccessException     if the current user is not the receiver of the request
+     * @throws ForbiddenException              if the current user is not the receiver of the request
      * @throws IllegalFriendshipStateException if the request has already been accepted or rejected
      */
 
@@ -260,8 +258,8 @@ public class FriendshipService {
      *
      * @param friendshipId the ID of the friendship relation to delete
      * @param userId       the ID of the user requesting deletion
-     * @throws NotFoundException           if the friendship relation is not found
-     * @throws UnauthorizedAccessException if the user is not authorized to delete the relation
+     * @throws NotFoundException  if the friendship relation is not found
+     * @throws ForbiddenException if the user is not authorized to delete the relation
      */
 
     public void deleteFriendship(Long friendshipId, Long userId) {
@@ -273,7 +271,7 @@ public class FriendshipService {
         });
         if (!userId.equals(friendship.getSender().getUserId()) && !userId.equals(friendship.getReceiver().getUserId())) {
             log.warn("User with id={} attempted to delete friendship with id={} but is not authorized", userId, friendshipId);
-            throw new UnauthorizedAccessException("You are not authorized to delete this friendship");
+            throw new ForbiddenException("You are not authorized to delete this friendship");
         }
 
         friendshipRepository.delete(friendship);

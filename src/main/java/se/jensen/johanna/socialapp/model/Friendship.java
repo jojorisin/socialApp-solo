@@ -4,6 +4,11 @@ import jakarta.persistence.*;
 
 import java.time.LocalDateTime;
 
+/**
+ * Represents a friendship in the social-app
+ * Contains factory-methods to ensure safe acceptance of friendship requests
+ * and relations to friends as sender and receiver for proper backend-logic
+ */
 @Entity
 @Table(name = "friendships")
 public class Friendship {

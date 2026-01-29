@@ -8,6 +8,10 @@ import se.jensen.johanna.socialapp.model.FriendshipStatus;
 
 import java.util.List;
 
+/**
+ * Repository interface for {@link Friendship} entities.
+ * Provides methods for managing and querying friendship relationships between users.
+ */
 public interface FriendshipRepository extends JpaRepository<Friendship, Long> {
 
     boolean existsBySender_UserIdAndReceiver_UserId(Long senderId, Long receiverId);

@@ -11,6 +11,9 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Represents a post in the social-app.
+ */
 @Getter
 @Setter
 @Entity
@@ -31,10 +34,17 @@ public class Post {
 
     private LocalDateTime updatedAt;
 
+    /**
+     * Represents the author of the post
+     */
     @JoinColumn(name = "user_id", nullable = false)
     @ManyToOne(fetch = FetchType.LAZY)
     private User user;
 
+    /**
+     * Represents the comments on the post.
+     * If a post is deleted, so is the comments because they live within a post
+     */
     @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("createdAt ASC")
     private List<Comment> comments = new ArrayList<>();

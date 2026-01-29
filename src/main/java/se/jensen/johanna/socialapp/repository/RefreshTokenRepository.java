@@ -9,6 +9,10 @@ import se.jensen.johanna.socialapp.model.User;
 
 import java.util.Optional;
 
+/**
+ * Repository interface for {@link RefreshToken} entities.
+ * Provides methods to perform various operations on refresh tokens in the database.
+ */
 @Repository
 public interface RefreshTokenRepository extends JpaRepository<RefreshToken, Long> {
 

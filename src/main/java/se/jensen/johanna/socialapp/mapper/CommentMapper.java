@@ -4,6 +4,9 @@ import org.mapstruct.*;
 import se.jensen.johanna.socialapp.dto.*;
 import se.jensen.johanna.socialapp.model.Comment;
 
+/**
+ * mapper-class for comments
+ */
 @Mapper(componentModel = "spring", imports = {java.time.LocalDateTime.class})
 public interface CommentMapper {
 

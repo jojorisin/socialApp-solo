@@ -7,6 +7,9 @@ import lombok.Setter;
 
 import java.time.Instant;
 
+/**
+ * Represents refreshtoken-cookie for token rotation
+ */
 @Entity
 @Table(name = "refresh_tokens")
 @NoArgsConstructor

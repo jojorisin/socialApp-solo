@@ -6,6 +6,13 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 import se.jensen.johanna.socialapp.model.Post;
 
+/**
+ * Repository interface for {@link Post} entities.
+ * <p>
+ * This interface handles all database operations for posts, extending {@link JpaRepository}
+ * to provide standard CRUD functionality and pagination support.
+ */
+
 @Repository
 public interface PostRepository extends JpaRepository<Post, Long> {
 

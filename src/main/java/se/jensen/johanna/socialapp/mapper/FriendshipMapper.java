@@ -5,6 +5,9 @@ import org.mapstruct.Mapping;
 import se.jensen.johanna.socialapp.dto.FriendResponseDTO;
 import se.jensen.johanna.socialapp.model.Friendship;
 
+/**
+ * Mapper-class for friendship
+ */
 @Mapper(componentModel = "spring")
 public interface FriendshipMapper {
 

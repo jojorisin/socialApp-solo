@@ -4,6 +4,9 @@ import org.mapstruct.*;
 import se.jensen.johanna.socialapp.dto.*;
 import se.jensen.johanna.socialapp.model.Post;
 
+/**
+ * Mapper class for posts
+ */
 @Mapper(componentModel = "spring", uses = CommentMapper.class, imports = {java.time.LocalDateTime.class})
 public interface PostMapper {
 

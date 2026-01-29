@@ -6,6 +6,10 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 import se.jensen.johanna.socialapp.model.Comment;
 
+/**
+ * Repository interface for {@link Comment}
+ * provides standard CRUD operations through JpaRepository
+ */
 @Repository
 public interface CommentRepository extends JpaRepository<Comment, Long> {
 

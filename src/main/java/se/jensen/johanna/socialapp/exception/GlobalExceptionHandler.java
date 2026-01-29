@@ -15,9 +15,22 @@ import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Global exception handler that intercepts exceptions thrown by the controllers
+ * and returns consistent error responses to the client.
+ */
+
 @Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    /**
+     * Handles Spring Security's AccessDeniedException when a user lacks the required roles.
+     *
+     * @param e       the AccessDeniedException
+     * @param request the current web request
+     * @return a ResponseEntity containing the error details and FORBIDDEN status
+     */
 
     @ExceptionHandler(org.springframework.security.access.AccessDeniedException.class)
     public ResponseEntity<ErrorResponse> handleAccessDenied(AccessDeniedException e, WebRequest request) {
@@ -50,16 +63,6 @@ public class GlobalExceptionHandler {
 
     }
 
-    @ExceptionHandler(UnauthorizedAccessException.class)
-    public ResponseEntity<ErrorResponse> handleUnauthorizedAccess(
-            UnauthorizedAccessException e, WebRequest request) {
-        return buildErrorResponse(
-                HttpStatus.UNAUTHORIZED,
-                "UNAUTHORIZED_ACCESS",
-                e.getMessage(),
-                request
-        );
-    }
 
     @ExceptionHandler(IllegalFriendshipStateException.class)
     public ResponseEntity<ErrorResponse> handleIllegalFriendshipState(

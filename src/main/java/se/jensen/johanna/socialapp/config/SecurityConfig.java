@@ -44,6 +44,19 @@ public class SecurityConfig {
     @Value("${app.cors.allowed-origins}")
     private String allowedOrigin;
 
+
+    /**
+     * Configures the security filter chain for the application.
+     * * <p>Key security features configured here:
+     * <ul>
+     * <li><b>CSRF:</b> Disabled because the API is stateless and uses JWTs.</li>
+     * <li><b>CORS:</b> Applied with default settings from the {@code corsConfigurationSource}.</li>
+     * <li><b>Session Management:</b> Set to {@code STATELESS} to ensure no server-side sessions are created.</li>
+     * <li><b>Authorization:</b> Defines public endpoints (Swagger, Auth) and restricts access
+     * to protected resources based on roles or authentication status.</li>
+     * <li><b>Resource Server:</b> Configures JWT validation for incoming requests.</li>
+     * </ul>
+     */
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
@@ -65,6 +78,16 @@ public class SecurityConfig {
         return http.build();
     }
 
+    /**
+     * Defines the CORS (Cross-Origin Resource Sharing) policy.
+     * * <p>This configuration controls how browsers handle cross-origin requests:
+     * <ul>
+     * <li><b>Allowed Origins:</b> Specifies the client URL (frontend) permitted to access the API.</li>
+     * <li><b>Allowed Methods:</b> Lists the HTTP verbs (GET, POST, etc.) allowed for requests.</li>
+     * <li><b>Allowed Headers:</b> Uses "*" to permit all request headers from the client.</li>
+     * <li><b>Allow Credentials:</b> Permits the transmission of sensitive data like cookies or Authorization headers.</li>
+     * </ul>
+     */
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();

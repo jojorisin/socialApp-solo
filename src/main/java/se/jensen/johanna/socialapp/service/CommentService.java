@@ -9,7 +9,6 @@ import org.springframework.stereotype.Service;
 import se.jensen.johanna.socialapp.dto.*;
 import se.jensen.johanna.socialapp.exception.ForbiddenException;
 import se.jensen.johanna.socialapp.exception.NotFoundException;
-import se.jensen.johanna.socialapp.exception.UnauthorizedAccessException;
 import se.jensen.johanna.socialapp.mapper.CommentMapper;
 import se.jensen.johanna.socialapp.model.Comment;
 import se.jensen.johanna.socialapp.model.Post;
@@ -119,8 +118,8 @@ public class CommentService {
      * @param userId         ID of the owner to comment
      * @param commentRequest Content of the update
      * @return Returns {@link UpdateCommentResponse}
-     * @throws NotFoundException           If no comment exists with the given id
-     * @throws UnauthorizedAccessException If the userId does not match comments owner
+     * @throws NotFoundException  If no comment exists with the given id
+     * @throws ForbiddenException If the userId does not match comments owner
      */
     public UpdateCommentResponse updateComment(Long commentId, Long userId, CommentRequest commentRequest) {
         log.info("User with id={} is trying to update comment with id={}", userId, commentId);
@@ -140,8 +139,8 @@ public class CommentService {
      *
      * @param commentId ID of comment to delete
      * @param userId    ID of the owner to comment
-     * @throws NotFoundException           If no comment exists with the given id
-     * @throws UnauthorizedAccessException If the userId does not match comments owner
+     * @throws NotFoundException  If no comment exists with the given id
+     * @throws ForbiddenException If the userId does not match comments owner
      */
     public void deleteComment(Long commentId, Long userId) {
         log.info("User with id={} is trying to delete comment with id={}", userId, commentId);
@@ -202,7 +201,7 @@ public class CommentService {
      *
      * @param userId  The ID of the user attempting the action
      * @param comment The comment to check ownership for
-     * @throws UnauthorizedAccessException If the user is not the author of the comment
+     * @throws ForbiddenException If the user is not the author of the comment
      */
     private void validateAuthor(Long userId, Comment comment) {
         if (!comment.getUser().getUserId().equals(userId)) {

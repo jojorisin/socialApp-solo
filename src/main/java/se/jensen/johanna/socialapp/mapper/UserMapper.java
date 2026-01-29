@@ -5,6 +5,9 @@ import se.jensen.johanna.socialapp.dto.*;
 import se.jensen.johanna.socialapp.model.Role;
 import se.jensen.johanna.socialapp.model.User;
 
+/**
+ * Mapper-class for user.
+ */
 @Mapper(componentModel = "spring", uses = {PostMapper.class})
 public interface UserMapper {
 

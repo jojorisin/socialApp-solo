@@ -8,6 +8,14 @@ import se.jensen.johanna.socialapp.model.User;
 
 import java.util.Optional;
 
+/**
+ * Repository interface for {@link User} entities.
+ * <p>
+ * Provides standard and custom CRUD operations through JpaRepository and custom query methods
+ * for managing user data in the database.
+ * </p>
+ */
+
 @Repository
 public interface UserRepository extends JpaRepository<User, Long> {
 
