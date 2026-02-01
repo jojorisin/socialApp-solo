@@ -2,7 +2,6 @@ package se.jensen.johanna.socialapp.controller;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -12,11 +11,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 import se.jensen.johanna.socialapp.dto.*;
+import se.jensen.johanna.socialapp.security.MyUserDetails;
 import se.jensen.johanna.socialapp.service.CommentService;
-import se.jensen.johanna.socialapp.util.JwtUtils;
 
 
 /**
@@ -31,7 +29,6 @@ import se.jensen.johanna.socialapp.util.JwtUtils;
 @RequiredArgsConstructor
 public class CommentController {
     private final CommentService commentService;
-    private final JwtUtils jwtUtils;
 
     /**
      * Retrieves all main comments for a post
@@ -40,41 +37,31 @@ public class CommentController {
      * @return {@link CommentDTO}
      */
     @GetMapping("/posts/{postId}/comments")
-    public ResponseEntity<Page<CommentDTO>> getAllCommentsForPost(@PathVariable
-                                                                  Long postId,
-                                                                  @ParameterObject
-                                                                  @PageableDefault(size = 10,
-                                                                  sort = "createdAt",
-                                                                  direction = Sort.Direction.DESC)
-                                                                  Pageable pageable) {
+    public ResponseEntity<Page<CommentDTO>> getAllCommentsForPost(
+            @PathVariable Long postId,
+            @ParameterObject @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
 
-        Page<CommentDTO> commentDTOS = commentService.findAllMainComments(postId, pageable);
 
-        return ResponseEntity.ok(commentDTOS);
+        return ResponseEntity.ok(commentService.findAllMainComments(postId, pageable));
     }
 
     /**
      * Creates a comment to a specific post as an authenticated user
      *
      * @param postId         ID of post to comment
-     * @param jwt            AccessToken containing userId in sub
      * @param commentRequest {@link CommentRequest}
      * @return {@link CommentResponse}
      */
     @PreAuthorize("isAuthenticated()")
     @PostMapping("/posts/{postId}/comments")
-    public ResponseEntity<CommentResponse> postComment(@PathVariable
-                                                       Long postId,
-                                                       @AuthenticationPrincipal
-                                                       Jwt jwt,
-                                                       @RequestBody @Valid
-                                                       CommentRequest commentRequest) {
-        Long userId = jwtUtils.extractUserId(jwt);
+    public ResponseEntity<CommentResponse> postComment(
+            @PathVariable Long postId,
+            @AuthenticationPrincipal MyUserDetails userDetails,
+            @RequestBody @Valid CommentRequest commentRequest) {
 
-        CommentResponse commentResponse = commentService.commentPost(
-                postId, userId, commentRequest);
 
-        return ResponseEntity.status(HttpStatus.CREATED).body(commentResponse);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(commentService.commentPost(postId, userDetails.getUserId(), commentRequest));
 
     }
 
@@ -84,7 +71,6 @@ public class CommentController {
      * as its parentId, creating a nested relationship.
      *
      * @param commentId      ID of comment to reply to
-     * @param jwt            AccessToken containing userId in sub
      * @param commentRequest {@link CommentRequest}
      * @return {@link ReplyCommentResponse}
      */
@@ -92,19 +78,13 @@ public class CommentController {
     @PostMapping("/comments/{commentId}/replies")
     public ResponseEntity<ReplyCommentResponse> replyComment(
             @PathVariable Long commentId,
-            @AuthenticationPrincipal
-            Jwt jwt,
+            @AuthenticationPrincipal MyUserDetails userDetails,
             @RequestBody @Valid CommentRequest commentRequest
     ) {
-        Long userId = jwtUtils.extractUserId(jwt);
 
-        ReplyCommentResponse commentResponse =
-                commentService.replyComment(
-                        commentId,
-                        userId,
-                        commentRequest);
 
-        return ResponseEntity.status(HttpStatus.CREATED).body(commentResponse);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(commentService.replyComment(commentId, userDetails.getUserId(), commentRequest));
 
 
     }
@@ -119,14 +99,10 @@ public class CommentController {
      */
     @GetMapping("/comments/{commentId}/replies")
     public ResponseEntity<Page<CommentDTO>> getAllRepliesForComment(
-            @PathVariable
-            Long commentId,
-            @ParameterObject
-            @PageableDefault (size = 5,
-            sort = "createdAt", direction = Sort.Direction.ASC) Pageable pageable) {
-        Page<CommentDTO> replies = commentService.findAllRepliesForComment(commentId, pageable);
+            @PathVariable Long commentId,
+            @ParameterObject @PageableDefault(size = 5, sort = "createdAt", direction = Sort.Direction.ASC) Pageable pageable) {
 
-        return ResponseEntity.ok(replies);
+        return ResponseEntity.ok(commentService.findAllRepliesForComment(commentId, pageable));
 
     }
 
@@ -134,43 +110,35 @@ public class CommentController {
      * Updates a specific comment as an authenticated user and verified owner of comment
      * Only the owner of the comment is authorized to perform this update
      *
-     * @param jwt            AccessToken used to verify ownership
      * @param commentId      ID of comment to update
      * @param commentRequest {@link CommentRequest}
      * @return {@link UpdateCommentResponse}
      */
     @PreAuthorize("isAuthenticated()")
     @PatchMapping("/comments/{commentId}")
-    public ResponseEntity<UpdateCommentResponse> updateComment(@AuthenticationPrincipal
-                                                               Jwt jwt,
-                                                               @PathVariable
-                                                               Long commentId,
-                                                               @RequestBody
-                                                               CommentRequest commentRequest) {
-        Long userId = jwtUtils.extractUserId(jwt);
-        UpdateCommentResponse commentResponse = commentService.updateComment(
-                commentId, userId, commentRequest);
+    public ResponseEntity<UpdateCommentResponse> updateComment(
+            @PathVariable Long commentId,
+            @AuthenticationPrincipal MyUserDetails userDetails,
+            @RequestBody @Valid CommentRequest commentRequest
+    ) {
 
-        return ResponseEntity.ok(commentResponse);
+        return ResponseEntity.ok(commentService.updateComment(commentId, userDetails.getUserId(), commentRequest));
     }
 
     /**
      * Deletes comment as an authenticated user and verified owner of comment
      *
-     * @param jwt       AccessToken containing userId i sub
      * @param commentId ID of comment to delete
      * @return ResponseEntity with no content (204)
      */
     @PreAuthorize("isAuthenticated()")
     @DeleteMapping("/comments/{commentId}")
-    public ResponseEntity<Void> deleteComment(@AuthenticationPrincipal
-                                              Jwt jwt,
-                                              @PathVariable
-                                              Long commentId) {
+    public ResponseEntity<Void> deleteComment(
+            @AuthenticationPrincipal MyUserDetails userDetails,
+            @PathVariable Long commentId) {
 
-        Long userId = jwtUtils.extractUserId(jwt);
 
-        commentService.deleteComment(commentId, userId);
+        commentService.deleteComment(commentId, userDetails.getUserId());
 
         return ResponseEntity.noContent().build();
     }

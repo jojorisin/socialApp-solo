@@ -4,19 +4,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
-import se.jensen.johanna.socialapp.dto.LoginRequestDTO;
-import se.jensen.johanna.socialapp.dto.LoginResponseDTO;
-import se.jensen.johanna.socialapp.dto.RefreshTokenResponse;
-import se.jensen.johanna.socialapp.dto.RegisterUserRequest;
-import se.jensen.johanna.socialapp.exception.RefreshTokenException;
-import se.jensen.johanna.socialapp.model.RefreshToken;
-import se.jensen.johanna.socialapp.security.MyUserDetails;
+import se.jensen.johanna.socialapp.dto.*;
+import se.jensen.johanna.socialapp.service.AuthService;
 import se.jensen.johanna.socialapp.service.RefreshTokenService;
-import se.jensen.johanna.socialapp.service.TokenService;
 import se.jensen.johanna.socialapp.service.UserService;
 import se.jensen.johanna.socialapp.util.CookieUtils;
 
@@ -29,31 +20,27 @@ import se.jensen.johanna.socialapp.util.CookieUtils;
 @RequestMapping("/auth")
 @RequiredArgsConstructor
 public class AuthController {
-    private final AuthenticationManager authenticationManager;
-    private final TokenService tokenService;
     private final UserService userService;
     private final RefreshTokenService refreshTokenService;
     private final CookieUtils cookieUtils;
+    private final AuthService authService;
 
     /**
      * Authenticates a user and returns a JWT token
      * Sets a refresh token as an HTTP-only cookie
      *
-     * @param loginRequestDTO {@link LoginRequestDTO} contains username and password
-     * @return Response with {@link LoginResponseDTO}
+     * @param loginRequest {@link LoginRequest} contains username and password
+     * @return Response with {@link LoginResponse}
      */
     @PostMapping("/login")
-    public ResponseEntity<LoginResponseDTO> getToken(@RequestBody
-                                                     LoginRequestDTO loginRequestDTO) {
+    public ResponseEntity<LoginResponse> getToken(
+            @RequestBody LoginRequest loginRequest) {
 
-
-        LoginResponseDTO loginResponseDTO = createLoginResponse(getAuth(loginRequestDTO.username(), loginRequestDTO.password()));
-
-        RefreshToken refreshToken = refreshTokenService.createRefreshToken(loginResponseDTO.userId());
-        ResponseCookie responseCookie = cookieUtils.createRefreshCookie(refreshToken.getToken());
+        LoginResult result = authService.login(loginRequest);
+        ResponseCookie responseCookie = cookieUtils.createRefreshCookie(result.refreshToken());
 
         return ResponseEntity.ok().header(HttpHeaders.SET_COOKIE, responseCookie.toString())
-                .body(loginResponseDTO);
+                .body(result.loginResponse());
     }
 
     /**
@@ -68,16 +55,11 @@ public class AuthController {
 
     ) {
 
-        RefreshToken oldToken = refreshTokenService.findByToken(oldTokenStr)
-                .map(refreshTokenService::verifyExpiration)
-                .orElseThrow(() -> new RefreshTokenException("RefreshToken is not in database"));
+        RefreshResult result = authService.refresh(oldTokenStr);
+        ResponseCookie cookie = cookieUtils.createRefreshCookie(result.refreshToken());
 
-        RefreshToken newRefreshToken = refreshTokenService.createRefreshToken(oldToken.getUser().getUserId());
-        ResponseCookie responseCookie = cookieUtils.createRefreshCookie(newRefreshToken.getToken());
-        String newJwt = tokenService.generateToken(oldToken.getUser());
-
-        return ResponseEntity.ok().header(HttpHeaders.SET_COOKIE, responseCookie.toString())
-                .body(new RefreshTokenResponse(newJwt));
+        return ResponseEntity.ok().header(HttpHeaders.SET_COOKIE, cookie.toString())
+                .body(new RefreshTokenResponse(result.accessToken()));
 
 
     }
@@ -87,20 +69,19 @@ public class AuthController {
      * Sets a refresh token as an HTTP-only cookie.
      *
      * @param registerUserRequest contains username, password and user details
-     * @return Response with {@link LoginResponseDTO} with JWT token and user information
+     * @return Response with {@link LoginResponse} with JWT token and user information
      */
     @PostMapping("/register")
-    public ResponseEntity<LoginResponseDTO> register(@RequestBody
-                                                     RegisterUserRequest registerUserRequest) {
+    public ResponseEntity<LoginResponse> register(@RequestBody
+                                                  RegisterUserRequest registerUserRequest) {
 
         userService.registerUser(registerUserRequest);
-        LoginResponseDTO loginResponseDTO = createLoginResponse(getAuth(registerUserRequest.username(), registerUserRequest.password()));
-        RefreshToken refreshToken = refreshTokenService.createRefreshToken(loginResponseDTO.userId());
-        ResponseCookie responseCookie = cookieUtils.createRefreshCookie(refreshToken.getToken());
+        LoginResult result = authService.login(new LoginRequest(registerUserRequest.username(), registerUserRequest.password()));
+        ResponseCookie responseCookie = cookieUtils.createRefreshCookie(result.refreshToken());
 
 
         return ResponseEntity.ok().header(HttpHeaders.SET_COOKIE, responseCookie.toString())
-                .body(loginResponseDTO);
+                .body(result.loginResponse());
 
     }
 
@@ -121,36 +102,6 @@ public class AuthController {
         ResponseCookie cleanCookie = cookieUtils.getCleanResponseCookie();
 
         return ResponseEntity.noContent().header(HttpHeaders.SET_COOKIE, cleanCookie.toString()).build();
-    }
-
-    /**
-     * private Help method that receives an Authentication object and returns LoginResponseDTO
-     *
-     * @param auth Authentication-object used for user information and token
-     * @return {@link LoginResponseDTO}
-     */
-    private LoginResponseDTO createLoginResponse(Authentication auth) {
-        MyUserDetails userDetails = ((MyUserDetails) auth.getPrincipal());
-
-        return new LoginResponseDTO(
-                tokenService.generateToken(auth),
-                userDetails.getUserId(),
-                userDetails.getRole(),
-                userDetails.getUsername()
-        );
-
-
-    }
-
-    /**
-     * Private help method to create username and password authentication
-     *
-     * @param username Username of the user that needs authentication
-     * @param password Password of the user that needs authentication
-     * @return {@link Authentication}
-     */
-    private Authentication getAuth(String username, String password) {
-        return authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(username, password));
     }
 
 
