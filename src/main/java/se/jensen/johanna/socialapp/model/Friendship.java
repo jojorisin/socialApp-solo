@@ -1,6 +1,9 @@
 package se.jensen.johanna.socialapp.model;
 
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
+import se.jensen.johanna.socialapp.exception.IllegalFriendshipStateException;
 
 import java.time.LocalDateTime;
 
@@ -11,6 +14,8 @@ import java.time.LocalDateTime;
  */
 @Entity
 @Table(name = "friendships")
+@Getter
+@Setter
 public class Friendship {
 
     @Id
@@ -35,44 +40,19 @@ public class Friendship {
      * This should be called when a user accepts a friend request.
      */
     public void accept() {
+        if (this.status != FriendshipStatus.PENDING) {
+            throw new IllegalFriendshipStateException("This request has already been handled");
+        }
         this.status = FriendshipStatus.ACCEPTED;
         this.acceptedAt = LocalDateTime.now();
     }
 
-    public Long getFriendshipId() {
-        return friendshipId;
+    public void reject() {
+        if (this.status != FriendshipStatus.PENDING) {
+            throw new IllegalFriendshipStateException("This request has already been handled");
+        }
+        this.status = FriendshipStatus.REJECTED;
     }
 
 
-    public User getSender() {
-        return sender;
-    }
-
-    public void setSender(User sender) {
-        this.sender = sender;
-    }
-
-    public User getReceiver() {
-        return receiver;
-    }
-
-    public void setReceiver(User receiver) {
-        this.receiver = receiver;
-    }
-
-    public FriendshipStatus getStatus() {
-        return status;
-    }
-
-    public void setStatus(FriendshipStatus status) {
-        this.status = status;
-    }
-
-    public LocalDateTime getAcceptedAt() {
-        return acceptedAt;
-    }
-
-    public void setAcceptedAt(LocalDateTime acceptedAt) {
-        this.acceptedAt = acceptedAt;
-    }
 }
