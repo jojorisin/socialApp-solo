@@ -5,7 +5,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import se.jensen.johanna.socialapp.dto.FriendResponseDTO;
-import se.jensen.johanna.socialapp.dto.FriendshipStatusDTO;
 import se.jensen.johanna.socialapp.dto.MyFriendRequest;
 import se.jensen.johanna.socialapp.dto.UserListDTO;
 import se.jensen.johanna.socialapp.exception.ForbiddenException;
@@ -19,7 +18,6 @@ import se.jensen.johanna.socialapp.model.User;
 import se.jensen.johanna.socialapp.repository.FriendshipRepository;
 import se.jensen.johanna.socialapp.repository.UserRepository;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -49,39 +47,30 @@ public class FriendshipService {
      * @param senderId   the ID of the user sending the request
      * @param receiverId the ID of the user intended to receive the request
      * @return a {@link FriendResponseDTO} representing the created request
-     * @throws IllegalArgumentException if the user attempts to add themselves as a friend
-     * @throws IllegalStateException    if a friendship or request already exists between the users
-     * @throws NotFoundException        if either the sender or receiver user is not found
+     * @throws ForbiddenException              if the user attempts to add themselves as a friend
+     * @throws IllegalFriendshipStateException if a friendship or request already exists between the users
+     * @throws NotFoundException               if either the sender or receiver user is not found
      */
 
     public FriendResponseDTO sendFriendRequest(Long senderId, Long receiverId) {
-        log.info("User with id={} is trying to send a friend request to user with id={}", senderId, receiverId);
 
         if (senderId.equals(receiverId)) {
             log.warn("User with id={} attempted to send a friend request to themselves", senderId);
-            throw new IllegalFriendshipStateException("You cannot add yourself as a friend.");
+            throw new ForbiddenException("You cannot add yourself as a friend.");
         }
 
         // Check if friendship already exists in either direction
-        if (friendshipRepository.existsBySender_UserIdAndReceiver_UserId(senderId, receiverId) ||
-                friendshipRepository.existsBySender_UserIdAndReceiver_UserId(receiverId, senderId)) {
-            log.warn("User with id={} attempted to send a duplicate friend request to user with id={}", senderId, receiverId);
+        if (friendshipRepository.existsFriendshipBetween(senderId, receiverId)) {
+            log.warn("Duplicate friendship attempt: sender={}, receiver={}", senderId, receiverId);
             throw new IllegalFriendshipStateException("Friendship or request already exists.");
         }
 
-        User sender = userRepository.findById(senderId).orElseThrow(() -> {
-            log.warn("Sender with id={} not found when sending a friend request", senderId);
-            return new NotFoundException("Sender with id " + senderId + " not found.");
-        });
-        User receiver = userRepository.findById(receiverId).orElseThrow(() -> {
-            log.warn("Receiver with id={} not found when receiving friend request", receiverId);
-            return new NotFoundException("Receiver with id " + receiverId + " not found.");
-        });
+        User sender = getUserOrThrow(senderId);
+        User receiver = getUserOrThrow(receiverId);
 
         Friendship friendship = new Friendship();
         friendship.setSender(sender);
         friendship.setReceiver(receiver);
-        // Status is PENDING by default
 
         friendshipRepository.save(friendship); // Saves the new friendship request
         log.info("User with id={} successfully sent a friend request to user with id={}", senderId, receiverId);
@@ -90,50 +79,24 @@ public class FriendshipService {
 
     /**
      * Accepts an existing friend request.
-     * Ensures the user accepting the request is the actual receiver and that the request is in a valid state.
      *
      * @param friendshipId  the ID of the friendship relation to accept
      * @param currentUserId the ID of the authenticated user attempting the action
      * @return a {@link FriendResponseDTO} with the updated status (ACCEPTED)
-     * @throws NotFoundException               if the friend request is not found
+     * @throws NotFoundException               if the friendship is not found
      * @throws ForbiddenException              if the current user is not the receiver of the request
-     * @throws IllegalFriendshipStateException if the request has already been accepted or rejected
+     * @throws IllegalFriendshipStateException if the friendship status is not pending
      */
 
-    public FriendResponseDTO acceptFriendRequest(
-            Long friendshipId,
-            Long currentUserId) {
-        log.info("User with id={} is attempting to accept a friend request with id={}", currentUserId, friendshipId);
+    public FriendResponseDTO acceptFriendRequest(Long friendshipId, Long currentUserId) {
 
-        Friendship friendship = friendshipRepository.findById(friendshipId)
-                .orElseThrow(() -> {
-                    log.warn("Friend request with id={} not found when user with id={} attempted to accept it", friendshipId, currentUserId);
-                    return new NotFoundException("Friendship with id " + friendshipId + " not found.");
-                });
+        Friendship friendship = getFriendshipOrThrow(friendshipId);
+        validateReceiver(friendship, currentUserId);
 
-        // Security check: Only the receiver can accept the request
-        if (!friendship.getReceiver().getUserId().equals(currentUserId)) {
-            log.warn("User with id={} attempted to accept friend request with id={} but is not the receiver", currentUserId, friendshipId);
-            throw new ForbiddenException("You are not authorized to accept this request.");
-        }
+        friendship.accept();
+        friendshipRepository.save(friendship);
 
-
-        // Validation: Cannot accept a request that has been rejected
-        if (friendship.getStatus().equals(FriendshipStatus.REJECTED)) {
-            log.warn("User with id={} attempted to accept rejected friend request with id={}", currentUserId, friendshipId);
-            throw new IllegalFriendshipStateException("This request has already been rejected");
-        }
-
-        // Validation: Cannot accept a request that is already accepted
-        if (friendship.getStatus().equals(FriendshipStatus.ACCEPTED)) {
-            log.warn("User with id={} attempted to accept already accepted friend request with id={}", currentUserId, friendshipId);
-            throw new IllegalFriendshipStateException("This request has already been accepted.");
-        }
-
-        friendship.accept(); // Sets status to ACCEPTED and acceptedAt to now
-        friendshipRepository.save(friendship); // Updates the current friendship
-
-        log.info("Friend request with id={} successfully accepted by user with id={}", friendshipId, currentUserId);
+        log.info("Friend request with id={} accepted by user with id={}", friendshipId, currentUserId);
 
         return friendshipMapper.toFriendResponseDTO(friendship);
     }
@@ -150,35 +113,13 @@ public class FriendshipService {
      */
 
     public void rejectFriendRequest(Long friendshipId, Long currentUserId) {
-        log.info("User with id={} is attempting to reject a friend request with id={}", currentUserId, friendshipId);
+        Friendship friendship = getFriendshipOrThrow(friendshipId);
+        validateReceiver(friendship, currentUserId);
 
-        Friendship friendship = friendshipRepository.findById(friendshipId)
-                .orElseThrow(() -> {
-                    log.warn("Friend request with id={} not found when user with id={} attempted to reject it", friendshipId, currentUserId);
-                    return new NotFoundException("Friendship with id " + friendshipId + " not found.");
-                });
+        friendship.reject();
 
-        // Security check: Only the receiver can reject the request
-        if (!friendship.getReceiver().getUserId().equals(currentUserId)) {
-            log.warn("User with id={} attempted to reject friend request with id={} but is not the receiver", currentUserId, friendshipId);
-            throw new ForbiddenException("You are not authorized to reject this request.");
-        }
+        log.info("Friendship with id={} rejected by user with id={}", friendshipId, currentUserId);
 
-        // Validation: Cannot reject a request that is already accepted
-        if (friendship.getStatus().equals(FriendshipStatus.ACCEPTED)) {
-            log.warn("User with id={} attempted to reject already accepted friend request with id={}", currentUserId, friendshipId);
-            throw new IllegalFriendshipStateException("This request has already been accepted.");
-        }
-        // Validation: Cannot reject a request that is already rejected
-        if (friendship.getStatus().equals(FriendshipStatus.REJECTED)) {
-            log.warn("User with id={} attempted to reject already rejected friend request with id={}", currentUserId, friendshipId);
-            throw new IllegalFriendshipStateException("This request has already been rejected.");
-        }
-
-        friendship.setStatus(FriendshipStatus.REJECTED);
-        log.info("Friend request with id={} successfully rejected by user with id={}", friendshipId, currentUserId);
-
-        // Deletes the friendship relation in the database.
         friendshipRepository.delete(friendship);
 
 
@@ -193,15 +134,12 @@ public class FriendshipService {
      * @return {@link UserListDTO}
      */
     public List<UserListDTO> getFriendsForUser(Long userId) {
-        List<Friendship> friendships = friendshipRepository.findFriendshipsByUserIdAndStatus(userId, FriendshipStatus.ACCEPTED);
+        return friendshipRepository.findFriendshipsByUserIdAndStatus(userId, FriendshipStatus.ACCEPTED)
+                .stream().map(f -> {
+                    User friend = f.getSender().getUserId().equals(userId) ? f.getReceiver() : f.getSender();
+                    return userMapper.toUserListDTO(friend);
+                }).toList();
 
-        List<UserListDTO> friends = new ArrayList<>();
-        for (Friendship f : friendships) {
-            User friend = f.getSender().getUserId().equals(userId) ?
-                    f.getReceiver() : f.getSender();
-            friends.add(userMapper.toUserListDTO(friend));
-        }
-        return friends;
     }
 
     /**
@@ -213,44 +151,22 @@ public class FriendshipService {
      */
 
     public List<MyFriendRequest> getFriendRequestsForUser(Long userId) {
-        List<Friendship> pendingFriends = friendshipRepository.findFriendshipsByUserIdAndStatus(userId, FriendshipStatus.PENDING);
-        List<MyFriendRequest> friendRequests = new ArrayList<>();
-        for (Friendship f : pendingFriends) {
-            User otherUser = f.getSender().getUserId().equals(userId) ?
-                    f.getReceiver() : f.getSender();
+        return friendshipRepository.findFriendshipsByUserIdAndStatus(userId, FriendshipStatus.PENDING)
+                .stream().map(f -> {
+                    User otherFriend = f.getSender().getUserId().equals(userId) ? f.getReceiver() : f.getSender();
+                    boolean isIncoming = f.getReceiver().getUserId().equals(userId);
 
-            boolean isIncoming = f.getReceiver().getUserId().equals(userId);
+                    return new MyFriendRequest(
+                            f.getFriendshipId(),
+                            otherFriend.getUserId(),
+                            otherFriend.getUsername(),
+                            otherFriend.getProfileImagePath(),
+                            isIncoming
+                    );
 
-            friendRequests.add(new MyFriendRequest(
-                    f.getFriendshipId(),
-                    otherUser.getUserId(),
-                    otherUser.getUsername(),
-                    otherUser.getProfileImagePath(),
-                    isIncoming
-            ));
-
-        }
-        return friendRequests;
-
+                }).toList();
     }
 
-    /**
-     * Retrieves the friendship status between the current user and a target user.
-     * Used to determine UI state (Add Friend, Cancel Request, Accept/Reject, Unfriend).
-     */
-    public FriendshipStatusDTO getFriendshipStatus(Long currentUserId, Long targetUserId) {
-        List<Friendship> friendships = friendshipRepository.findFriendshipBetween(currentUserId, targetUserId);
-
-        if (friendships.isEmpty()) {
-            return null; // No relationship exists
-        }
-
-        // If multiple exist due to bad data, we just take the first one to avoid crashing
-        Friendship f = friendships.get(0);
-        boolean isIncoming = f.getStatus() == FriendshipStatus.PENDING && f.getReceiver().getUserId().equals(currentUserId);
-
-        return new FriendshipStatusDTO(f.getFriendshipId(), f.getStatus(), isIncoming);
-    }
 
     /**
      * Deletes a friendship relation or a friend request.
@@ -263,18 +179,42 @@ public class FriendshipService {
      */
 
     public void deleteFriendship(Long friendshipId, Long userId) {
-        log.info("User with id={} is attempting to delete a friendship with id={}", userId, friendshipId);
+        Friendship friendship = getFriendshipOrThrow(friendshipId);
 
-        Friendship friendship = friendshipRepository.findById(friendshipId).orElseThrow(() -> {
-            log.warn("Friendship with id={} not found when user with id={} attempted to delete it", friendshipId, userId);
-            return new NotFoundException("Friendship with id " + friendshipId + " not found.");
-        });
-        if (!userId.equals(friendship.getSender().getUserId()) && !userId.equals(friendship.getReceiver().getUserId())) {
-            log.warn("User with id={} attempted to delete friendship with id={} but is not authorized", userId, friendshipId);
-            throw new ForbiddenException("You are not authorized to delete this friendship");
-        }
+        validateParticipant(friendship, userId);
+
+        log.info("User with id={} deleted friendship with id={}", userId, friendshipId);
 
         friendshipRepository.delete(friendship);
-        log.info("User with id={} successfully deleted friendship with id={}", userId, friendshipId);
+    }
+
+
+    private void validateParticipant(Friendship friendship, Long userId) {
+        if (!friendship.getSender().getUserId().equals(userId) && !friendship.getReceiver().getUserId().equals(userId)) {
+            log.warn("User with id={} tried to access friendship with id={} without being participant.", userId, friendship.getFriendshipId());
+            throw new ForbiddenException("You are not authorized to perform this action");
+        }
+    }
+
+    private void validateReceiver(Friendship friendship, Long receiverId) {
+        if (!friendship.getReceiver().getUserId().equals(receiverId)) {
+            log.warn("User with id={} attempted to accept a friend request with id={} but is not the receiver", receiverId, friendship.getFriendshipId());
+            throw new ForbiddenException("You are not authorized to perform this action");
+        }
+
+    }
+
+    private Friendship getFriendshipOrThrow(Long friendshipId) {
+        return friendshipRepository.findById(friendshipId).orElseThrow(() -> {
+            log.warn("Friendship with id={} not found", friendshipId);
+            return new NotFoundException(String.format("Friendship with id %d not found.", friendshipId));
+        });
+    }
+
+    private User getUserOrThrow(Long userId) {
+        return userRepository.findById(userId).orElseThrow(() -> {
+            log.warn("User with id={} not found", userId);
+            return new NotFoundException(String.format("User with id %d not found.", userId));
+        });
     }
 }

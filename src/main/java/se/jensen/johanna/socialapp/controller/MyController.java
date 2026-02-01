@@ -9,13 +9,12 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 import se.jensen.johanna.socialapp.dto.*;
+import se.jensen.johanna.socialapp.security.MyUserDetails;
 import se.jensen.johanna.socialapp.service.FriendshipService;
 import se.jensen.johanna.socialapp.service.PostService;
 import se.jensen.johanna.socialapp.service.UserService;
-import se.jensen.johanna.socialapp.util.JwtUtils;
 
 import java.util.List;
 
@@ -31,31 +30,25 @@ import java.util.List;
 public class MyController {
     private final UserService userService;
     private final FriendshipService friendshipService;
-    private final JwtUtils jwtUtils;
     private final PostService postService;
 
 
     @GetMapping
-    public ResponseEntity<MyDTO> getMe(@AuthenticationPrincipal Jwt jwt) {
-        Long userId = jwtUtils.extractUserId(jwt);
-        MyDTO myDTO = userService.getAuthenticatedUser(userId);
-        return ResponseEntity.ok(myDTO);
+    public ResponseEntity<MyDTO> getMe(@AuthenticationPrincipal MyUserDetails userDetails) {
+        return ResponseEntity.ok(userService.getAuthenticatedUser(userDetails.getUserId()));
     }
 
     /**
      * Retrieves a paginated list of posts belonging to the currently authenticated user.
      *
      * @param pageable pagination and sorting information
-     * @param jwt      the {@link Jwt} access token containing the authenticated user's identity
      * @return a ResponseEntity containing {@link UserPostDTO}
      */
     @GetMapping("/posts")
     public ResponseEntity<Page<UserPostDTO>> getMyPosts(
             @ParameterObject @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable,
-            @AuthenticationPrincipal Jwt jwt) {
-        Long userId = jwtUtils.extractUserId(jwt);
-        Page<UserPostDTO> myPosts = postService.getPostsForUser(userId, pageable);
-        return ResponseEntity.ok(myPosts);
+            @AuthenticationPrincipal MyUserDetails userDetails) {
+        return ResponseEntity.ok(postService.getPostsForUser(userDetails.getUserId(), pageable));
 
     }
 
@@ -64,62 +57,49 @@ public class MyController {
      * Contains a boolean isIncoming, is true if the user is on the receiving end
      * is false if the user is the sender
      *
-     * @param jwt AccessToken containing ID of the authenticated user
      * @return {@link MyFriendRequest}
      */
     @GetMapping("/friend-request")
-    public ResponseEntity<List<MyFriendRequest>> getFriendRequests(@AuthenticationPrincipal Jwt jwt) {
-        Long userId = jwtUtils.extractUserId(jwt);
-        List<MyFriendRequest> myFriendRequests = friendshipService.getFriendRequestsForUser(userId);
+    public ResponseEntity<List<MyFriendRequest>> getFriendRequests(@AuthenticationPrincipal MyUserDetails userDetails) {
 
-
-        return ResponseEntity.ok(myFriendRequests);
+        return ResponseEntity.ok(friendshipService.getFriendRequestsForUser(userDetails.getUserId()));
     }
 
 
     /**
      * Retrieves a list of all accepted friends for the authenticated user.
      *
-     * @param jwt the {@link Jwt} access token containing the authenticated user's identity
      * @return a {@link ResponseEntity} containing a list of {@link UserListDTO} representing the user's friends
      */
     @GetMapping("/friends")
-    public ResponseEntity<List<UserListDTO>> getMyFriends(@AuthenticationPrincipal Jwt jwt) {
-        Long userId = jwtUtils.extractUserId(jwt);
+    public ResponseEntity<List<UserListDTO>> getMyFriends(@AuthenticationPrincipal MyUserDetails userDetails) {
 
-        List<UserListDTO> friends = friendshipService.getFriendsForUser(userId);
-
-
-        return ResponseEntity.ok(friends);
+        return ResponseEntity.ok(friendshipService.getFriendsForUser(userDetails.getUserId()));
     }
 
     /**
      * Updates the profile information of the authenticated user.
      *
-     * @param jwt         the {@link Jwt} access token containing the authenticated user's identity
      * @param userRequest the {@link UpdateUserRequest} containing the updated profile data
      * @return a {@link ResponseEntity} containing the {@link UpdateUserResponse} with updated user details
      */
     @PatchMapping
-    public ResponseEntity<UpdateUserResponse> updateMe(@AuthenticationPrincipal Jwt jwt,
+    public ResponseEntity<UpdateUserResponse> updateMe(@AuthenticationPrincipal MyUserDetails userDetails,
                                                        @RequestBody UpdateUserRequest userRequest) {
-        Long userId = jwtUtils.extractUserId(jwt);
 
-        UpdateUserResponse userResponse = userService.updateUser(userRequest, userId);
-        return ResponseEntity.ok(userResponse);
+        return ResponseEntity.ok(userService.updateUser(userRequest, userDetails.getUserId()));
     }
 
     /**
      * Deletes the account of the authenticated user.
      *
-     * @param jwt the {@link Jwt} access token containing the authenticated user's identity
      * @return a {@link ResponseEntity} with status 204 (No Content) upon successful deletion
      */
     @DeleteMapping
-    public ResponseEntity<Void> deleteMe(@AuthenticationPrincipal Jwt jwt) {
-        Long userId = jwtUtils.extractUserId(jwt);
+    public ResponseEntity<Void> deleteMe(@AuthenticationPrincipal MyUserDetails userDetails) {
 
-        userService.deleteUser(userId);
+
+        userService.deleteUser(userDetails.getUserId());
 
         return ResponseEntity.noContent().build();
 

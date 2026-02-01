@@ -14,14 +14,14 @@ import java.util.List;
  */
 public interface FriendshipRepository extends JpaRepository<Friendship, Long> {
 
-    boolean existsBySender_UserIdAndReceiver_UserId(Long senderId, Long receiverId);
 
+    @Query("SELECT COUNT(f) > 0 FROM Friendship f WHERE " +
+            "(f.sender.userId = :userId1 AND f.receiver.userId = :userId2) OR " +
+            "(f.sender.userId = :userId2 AND f.receiver.userId = :userId1)")
+    boolean existsFriendshipBetween(@Param("userId1") Long userId1, @Param("userId2") Long userId2);
 
     // Finds friendships for a user filtered by a specific status (e.g., only ACCEPTED)
     @Query("SELECT f FROM Friendship f WHERE (f.sender.userId = :userId OR f.receiver.userId = :userId) AND f.status = :status")
     List<Friendship> findFriendshipsByUserIdAndStatus(@Param("userId") Long userId, @Param("status") FriendshipStatus status);
 
-    // Finds a specific friendship between two users (bi-directional check)
-    @Query("SELECT f FROM Friendship f WHERE (f.sender.userId = :user1Id AND f.receiver.userId = :user2Id) OR (f.sender.userId = :user2Id AND f.receiver.userId = :user1Id)")
-    List<Friendship> findFriendshipBetween(@Param("user1Id") Long user1Id, @Param("user2Id") Long user2Id);
 }
