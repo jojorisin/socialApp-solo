@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
  * and relations to friends as sender and receiver for proper backend-logic
  */
 @Entity
-@Table(name = "friendships")
+@Table(name = "friendships", uniqueConstraints = {@UniqueConstraint(columnNames = {"sender_id", "receiver_id"})})
 @Getter
 @Setter
 public class Friendship {

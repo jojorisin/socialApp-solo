@@ -17,6 +17,7 @@ import se.jensen.johanna.socialapp.mapper.UserMapper;
 import se.jensen.johanna.socialapp.model.Role;
 import se.jensen.johanna.socialapp.model.User;
 import se.jensen.johanna.socialapp.repository.UserRepository;
+import se.jensen.johanna.socialapp.service.helper.EntityProvider;
 
 import java.util.List;
 
@@ -35,6 +36,7 @@ public class UserService {
     private final UserRepository userRepository;
     private final UserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
+    private final EntityProvider entityProvider;
 
 
     public Page<UserDTO> searchUsers(String username, Pageable pageable) {
@@ -69,7 +71,7 @@ public class UserService {
      * @return {@link MyDTO} A detailed view of the authenticated user
      */
     public MyDTO getAuthenticatedUser(Long userId) {
-        User user = getUserOrThrow(userId);
+        User user = entityProvider.getUserOrThrow(userId);
         return userMapper.toMyDTO(user);
     }
 
@@ -84,7 +86,7 @@ public class UserService {
     public UpdateUserResponse updateUser(UpdateUserRequest userRequest, Long userId) {
         log.info("Trying to update user with id={}", userId);
 
-        User user = getUserOrThrow(userId);
+        User user = entityProvider.getUserOrThrow(userId);
         userMapper.updateUser(userRequest, user);
         userRepository.save(user);
 
@@ -127,7 +129,7 @@ public class UserService {
      */
     public void deleteUser(Long userId) {
         log.info("Trying to delete user with id={}", userId);
-        User userToDelete = getUserOrThrow(userId);
+        User userToDelete = entityProvider.getUserOrThrow(userId);
         userRepository.delete(userToDelete);
         log.info("User with id={} removed", userId);
     }
@@ -175,7 +177,7 @@ public class UserService {
     public UpdateUserResponse updateUserAdmin(UpdateUserRequest userRequest,
                                               Long userId) {
         log.info("Admin update initiated for user with id={}", userId);
-        User user = getUserOrThrow(userId);
+        User user = entityProvider.getUserOrThrow(userId);
         userMapper.updateUser(userRequest, user);
         userRepository.save(user);
 
@@ -208,21 +210,6 @@ public class UserService {
             log.warn("Registration attempt with already taken username={}", registerUserRequest.username());
             throw new NotUniqueException("Username is already registered. Please choose a unique username.");
         }
-    }
-
-
-    /**
-     * Retrieves a user and throws an exception if not found
-     *
-     * @param userId ID of user to fetch
-     * @return User entity
-     */
-    private User getUserOrThrow(Long userId) {
-        return userRepository.findById(userId)
-                .orElseThrow(() -> {
-                    log.warn("User with id={} not found", userId);
-                    return new NotFoundException("User with id " + userId + " not found");
-                });
     }
 
 
