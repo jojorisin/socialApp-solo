@@ -9,7 +9,6 @@ import org.springframework.security.oauth2.jwt.JwtClaimsSet;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
 import org.springframework.stereotype.Service;
-import se.jensen.johanna.socialapp.model.User;
 import se.jensen.johanna.socialapp.security.MyUserDetails;
 
 import java.time.Instant;
@@ -30,32 +29,6 @@ public class TokenService {
 
     private final JwtEncoder jwtEncoder;
 
-    /**
-     * Generates a JWT for a specific {@link User} entity.
-     * This method generates a new token when the old JWT has expired
-     *
-     * @param user the user entity for whom the token is generated
-     * @return a signed JWT string containing user identity and roles
-     */
-
-
-    public String generateToken(User user) {
-        Instant now = Instant.now();
-        Instant expiresAt = now.plus(expirationMinutes, ChronoUnit.MINUTES);
-        List<String> scope = List.of("ROLE_" + user.getRole().name());
-        JwtClaimsSet claimsSet = JwtClaimsSet.builder()
-                .issuer("self")
-                .issuedAt(now)
-                .expiresAt(expiresAt)
-                .subject(user.getUserId().toString())
-                .claim("name", user.getUsername())
-                .claim("scope", scope)
-                .build();
-
-        return jwtEncoder.encode(JwtEncoderParameters.from(claimsSet)).getTokenValue();
-
-
-    }
 
     /**
      * Generates a JWT based on the provided {@link Authentication} object.
@@ -65,7 +38,7 @@ public class TokenService {
      * @return a signed JWT string
      */
 
-    public String generateToken(Authentication authentication) {
+    public String generateAccessToken(Authentication authentication) {
         Instant now = Instant.now();
         Instant expiresAt = now.plus(expirationMinutes, ChronoUnit.MINUTES);
         List<String> scope = authentication.getAuthorities().stream()

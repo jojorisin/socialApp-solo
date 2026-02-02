@@ -17,6 +17,7 @@ import se.jensen.johanna.socialapp.security.MyUserDetails;
 public class AuthService {
     private final TokenService tokenService;
     private final RefreshTokenService refreshTokenService;
+    private final MyUserDetailsService myUserDetailsService;
 
 
     public LoginResult login(LoginRequest loginRequest) {
@@ -26,7 +27,7 @@ public class AuthService {
 
         );
         MyUserDetails userDetails = (MyUserDetails) auth.getPrincipal();
-        String accessToken = tokenService.generateToken(auth);
+        String accessToken = tokenService.generateAccessToken(auth);
         RefreshToken refreshToken = refreshTokenService.createRefreshToken(userDetails.getUserId());
 
         return new LoginResult(new LoginResponse(accessToken, userDetails.getUserId(), userDetails.getRole(), userDetails.getUsername()), refreshToken.getToken());
@@ -39,8 +40,12 @@ public class AuthService {
                 .map(refreshTokenService::verifyExpiration)
                 .orElseThrow(() -> new RefreshTokenException("RefreshToken is not in database")
                 );
+
+        MyUserDetails userDetails = (MyUserDetails) myUserDetailsService.loadUserByUsername(oldToken.getUser().getUsername());
+        Authentication auth = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
         RefreshToken newRefreshToken = refreshTokenService.createRefreshToken(oldToken.getUser().getUserId());
-        return new RefreshResult(tokenService.generateToken(oldToken.getUser()), newRefreshToken.getToken());
+
+        return new RefreshResult(tokenService.generateAccessToken(auth), newRefreshToken.getToken());
 
     }
 
