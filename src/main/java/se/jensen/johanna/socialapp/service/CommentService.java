@@ -14,8 +14,7 @@ import se.jensen.johanna.socialapp.model.Comment;
 import se.jensen.johanna.socialapp.model.Post;
 import se.jensen.johanna.socialapp.model.User;
 import se.jensen.johanna.socialapp.repository.CommentRepository;
-import se.jensen.johanna.socialapp.repository.PostRepository;
-import se.jensen.johanna.socialapp.repository.UserRepository;
+import se.jensen.johanna.socialapp.service.helper.EntityProvider;
 
 /**
  * Service class responsible for the business logic of comment management.
@@ -30,8 +29,7 @@ import se.jensen.johanna.socialapp.repository.UserRepository;
 public class CommentService {
     private final CommentRepository commentRepository;
     private final CommentMapper commentMapper;
-    private final PostRepository postRepository;
-    private final UserRepository userRepository;
+    private final EntityProvider entityProvider;
 
 
     /**
@@ -47,8 +45,8 @@ public class CommentService {
                                        CommentRequest commentRequest) {
         log.info("User with id={} is trying to comment on post with id={}", userId, postId);
 
-        User user = getUserOrThrow(userId);
-        Post post = getPostOrThrow(postId);
+        User user = entityProvider.getUserOrThrow(userId);
+        Post post = entityProvider.getPostOrThrow(postId);
         Comment comment = commentMapper.toComment(commentRequest);
         comment.setUser(user);
         comment.setPost(post);
@@ -75,8 +73,8 @@ public class CommentService {
             CommentRequest commentRequest) {
         log.info("User with id={} is trying to comment on comment with id={}", userId, parentId);
 
-        User user = getUserOrThrow(userId);
-        Comment parent = getCommentOrThrow(parentId);
+        User user = entityProvider.getUserOrThrow(userId);
+        Comment parent = entityProvider.getCommentOrThrow(parentId);
         Comment reply = commentMapper.toComment(commentRequest);
         reply.setUser(user);
         parent.addReply(reply);
@@ -124,7 +122,7 @@ public class CommentService {
     public UpdateCommentResponse updateComment(Long commentId, Long userId, CommentRequest commentRequest) {
         log.info("User with id={} is trying to update comment with id={}", userId, commentId);
 
-        Comment commentToUpdate = getCommentOrThrow(commentId);
+        Comment commentToUpdate = entityProvider.getCommentOrThrow(commentId);
         validateAuthor(userId, commentToUpdate);
 
         commentMapper.updateComment(commentRequest, commentToUpdate);
@@ -145,7 +143,7 @@ public class CommentService {
     public void deleteComment(Long commentId, Long userId) {
         log.info("User with id={} is trying to delete comment with id={}", userId, commentId);
 
-        Comment comment = getCommentOrThrow(commentId);
+        Comment comment = entityProvider.getCommentOrThrow(commentId);
         validateAuthor(userId, comment);
         commentRepository.delete(comment);
         log.info("User with id={} successfully deleted comment with id={}", userId, commentId);
@@ -162,7 +160,7 @@ public class CommentService {
      * @return {@link UpdateCommentResponse} The new edited post
      */
     public UpdateCommentResponse editComment(Long commentId, CommentRequest commentRequest) {
-        Comment comment = getCommentOrThrow(commentId);
+        Comment comment = entityProvider.getCommentOrThrow(commentId);
         commentMapper.updateComment(commentRequest, comment);
         commentRepository.save(comment);
         return commentMapper.toUpdateCommentResponse(comment);
@@ -175,26 +173,10 @@ public class CommentService {
      * @param commentId ID of comment to delete
      */
     public void deleteComment(Long commentId) {
-        Comment comment = getCommentOrThrow(commentId);
+        Comment comment = entityProvider.getCommentOrThrow(commentId);
         commentRepository.delete(comment);
     }
 
-    /**
-     * Helper method to fetch a comment from the repository or throw a {@link NotFoundException}.
-     *
-     * @param commentId ID of the comment to find
-     * @return The found {@link Comment}
-     * @throws NotFoundException If the comment with the given ID does not exist
-     */
-    private Comment getCommentOrThrow(Long commentId) {
-        return commentRepository.findById(commentId)
-                .orElseThrow(() -> {
-                            log.warn("Comment with id={} was not found", commentId);
-                            return new NotFoundException("Comment with id " + commentId + " not found.");
-                        }
-                );
-
-    }
 
     /**
      * Validates that the provided user ID matches the author of the given comment.
@@ -212,32 +194,5 @@ public class CommentService {
 
     }
 
-    /**
-     * Help method that retrieves a user and throws an exception if not found
-     *
-     * @param userId ID of user to fetch
-     * @return User entity
-     */
-    private User getUserOrThrow(Long userId) {
-        return userRepository.findById(userId)
-                .orElseThrow(() -> {
-                    log.warn("User with id={} not found", userId);
-                    return new NotFoundException("User with id " + userId + " not found.");
-                });
-    }
-
-    /**
-     * Help method that retrieves a post and throws an exception if not found
-     *
-     * @param postId ID of post to fetch
-     * @return Post entity
-     */
-    private Post getPostOrThrow(Long postId) {
-        return postRepository.findById(postId)
-                .orElseThrow(() -> {
-                    log.warn("Post with id={} not found", postId);
-                    return new NotFoundException("Post with id " + postId + " not found.");
-                });
-    }
 
 }

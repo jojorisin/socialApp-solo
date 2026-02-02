@@ -16,7 +16,7 @@ import se.jensen.johanna.socialapp.model.Friendship;
 import se.jensen.johanna.socialapp.model.FriendshipStatus;
 import se.jensen.johanna.socialapp.model.User;
 import se.jensen.johanna.socialapp.repository.FriendshipRepository;
-import se.jensen.johanna.socialapp.repository.UserRepository;
+import se.jensen.johanna.socialapp.service.helper.EntityProvider;
 
 import java.util.List;
 
@@ -35,9 +35,9 @@ import java.util.List;
 public class FriendshipService {
 
     private final FriendshipRepository friendshipRepository;
-    private final UserRepository userRepository;
     private final FriendshipMapper friendshipMapper;
     private final UserMapper userMapper;
+    private final EntityProvider entityProvider;
 
 
     /**
@@ -65,8 +65,8 @@ public class FriendshipService {
             throw new IllegalFriendshipStateException("Friendship or request already exists.");
         }
 
-        User sender = getUserOrThrow(senderId);
-        User receiver = getUserOrThrow(receiverId);
+        User sender = entityProvider.getUserOrThrow(senderId);
+        User receiver = entityProvider.getUserOrThrow(receiverId);
 
         Friendship friendship = new Friendship();
         friendship.setSender(sender);
@@ -90,7 +90,7 @@ public class FriendshipService {
 
     public FriendResponseDTO acceptFriendRequest(Long friendshipId, Long currentUserId) {
 
-        Friendship friendship = getFriendshipOrThrow(friendshipId);
+        Friendship friendship = entityProvider.getFriendshipOrThrow(friendshipId);
         validateReceiver(friendship, currentUserId);
 
         friendship.accept();
@@ -113,7 +113,7 @@ public class FriendshipService {
      */
 
     public void rejectFriendRequest(Long friendshipId, Long currentUserId) {
-        Friendship friendship = getFriendshipOrThrow(friendshipId);
+        Friendship friendship = entityProvider.getFriendshipOrThrow(friendshipId);
         validateReceiver(friendship, currentUserId);
 
         friendship.reject();
@@ -179,7 +179,7 @@ public class FriendshipService {
      */
 
     public void deleteFriendship(Long friendshipId, Long userId) {
-        Friendship friendship = getFriendshipOrThrow(friendshipId);
+        Friendship friendship = entityProvider.getFriendshipOrThrow(friendshipId);
 
         validateParticipant(friendship, userId);
 
@@ -204,17 +204,4 @@ public class FriendshipService {
 
     }
 
-    private Friendship getFriendshipOrThrow(Long friendshipId) {
-        return friendshipRepository.findById(friendshipId).orElseThrow(() -> {
-            log.warn("Friendship with id={} not found", friendshipId);
-            return new NotFoundException(String.format("Friendship with id %d not found.", friendshipId));
-        });
-    }
-
-    private User getUserOrThrow(Long userId) {
-        return userRepository.findById(userId).orElseThrow(() -> {
-            log.warn("User with id={} not found", userId);
-            return new NotFoundException(String.format("User with id %d not found.", userId));
-        });
-    }
 }

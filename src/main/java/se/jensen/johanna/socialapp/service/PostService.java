@@ -13,7 +13,7 @@ import se.jensen.johanna.socialapp.mapper.PostMapper;
 import se.jensen.johanna.socialapp.model.Post;
 import se.jensen.johanna.socialapp.model.User;
 import se.jensen.johanna.socialapp.repository.PostRepository;
-import se.jensen.johanna.socialapp.repository.UserRepository;
+import se.jensen.johanna.socialapp.service.helper.EntityProvider;
 
 /**
  * Service class for managing posts in the social application.
@@ -28,7 +28,7 @@ import se.jensen.johanna.socialapp.repository.UserRepository;
 public class PostService {
     private final PostRepository postRepository;
     private final PostMapper postMapper;
-    private final UserRepository userRepository;
+    private final EntityProvider entityProvider;
 
 
     /**
@@ -53,7 +53,7 @@ public class PostService {
      * @throws NotFoundException if the user with the specified ID does not exist
      */
     public Page<UserPostDTO> getPostsForUser(Long userId, Pageable pageable) {
-        getUserOrThrow(userId);
+        entityProvider.getUserOrThrow(userId);
         Page<Post> userPosts = postRepository.findByUser_UserId(userId, pageable);
         return userPosts.map(postMapper::toUserPostDTO);
     }
@@ -67,7 +67,7 @@ public class PostService {
      * @throws NotFoundException if the post with the specified ID is not found
      */
     public PostDTO getPost(Long postId) {
-        Post post = getPostOrThrow(postId);
+        Post post = entityProvider.getPostOrThrow(postId);
         return postMapper.toPostDTO(post);
     }
 
@@ -82,7 +82,7 @@ public class PostService {
 
     public PostResponseDTO addPost(PostRequest postRequest, Long userId) {
         log.info("Trying to add post for user with id={}", userId);
-        User user = getUserOrThrow(userId);
+        User user = entityProvider.getUserOrThrow(userId);
         Post post = postMapper.toPost(postRequest);
         post.setUser(user);
         postRepository.save(post);
@@ -103,7 +103,7 @@ public class PostService {
      */
     public UpdatePostResponse updatePost(PostRequest postRequest, Long postId, Long userId) {
         log.info("Trying to update post with id={} for user with id={}", postId, userId);
-        Post post = getPostOrThrow(postId);
+        Post post = entityProvider.getPostOrThrow(postId);
         validateAuthor(post, userId);
         postMapper.updatePost(postRequest, post);
         postRepository.save(post);
@@ -123,7 +123,7 @@ public class PostService {
      */
     public void deletePost(Long postId, Long userId) {
         log.info("Trying to delete post with id={} for user with id={}", postId, userId);
-        Post post = getPostOrThrow(postId);
+        Post post = entityProvider.getPostOrThrow(postId);
 
         validateAuthor(post, userId);
 
@@ -144,10 +144,7 @@ public class PostService {
     public UpdatePostResponse updatePostAdmin(
             PostRequest postRequest, Long postId) {
         log.info("ADMIN trying to update post with id={}", postId);
-        Post post = postRepository.findById(postId).orElseThrow(() -> {
-            log.warn("ADMIN was unable to update post with id={}", postId);
-            return new NotFoundException();
-        });
+        Post post = entityProvider.getPostOrThrow(postId);
 
         postMapper.updatePost(postRequest, post);
         postRepository.save(post);
@@ -164,32 +161,13 @@ public class PostService {
      */
     public void deletePostAdmin(Long postId) {
         log.info("ADMIN trying to delete post with id={}", postId);
-        Post post = postRepository.findById(postId).orElseThrow(() -> {
-            log.warn("ADMIN was unable to delete post with id={}", postId);
-            return new NotFoundException();
-        });
 
+        Post post = entityProvider.getPostOrThrow(postId);
         postRepository.delete(post);
+
         log.info("ADMIN successfully deleted post with id={}", postId);
     }
 
-
-    private Post getPostOrThrow(Long postId) {
-        return postRepository.findById(postId)
-                .orElseThrow(() -> {
-                    log.warn("Post with id={} not found", postId);
-                    return new NotFoundException("Post with id " + postId + " not found.");
-
-                });
-    }
-
-    private User getUserOrThrow(Long userId) {
-        return userRepository.findById(userId)
-                .orElseThrow(() -> {
-                    log.warn("User with id={} not found", userId);
-                    return new NotFoundException("User with id " + userId + " not found.");
-                });
-    }
 
     private void validateAuthor(Post post, Long userId) {
         if (!post.getUser().getUserId().equals(userId)) {
