@@ -15,9 +15,9 @@ import se.jensen.johanna.socialapp.mapper.CommentMapper;
 import se.jensen.johanna.socialapp.model.Comment;
 import se.jensen.johanna.socialapp.model.User;
 import se.jensen.johanna.socialapp.repository.CommentRepository;
+import se.jensen.johanna.socialapp.service.helper.EntityProvider;
 
 import java.time.LocalDateTime;
-import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -31,6 +31,8 @@ class CommentServiceTest {
     private CommentMapper commentMapper;
     @InjectMocks
     private CommentService commentService;
+    @Mock
+    private EntityProvider entityProvider;
 
     private Comment existingComment;
     private User owner;
@@ -53,15 +55,15 @@ class CommentServiceTest {
         Long wrongUserId = 2L;
 
 
-        when(commentRepository.findById(existingComment.getCommentId()))
-                .thenReturn(Optional.of(existingComment));
-
+        when(entityProvider.getCommentOrThrow(existingComment.getCommentId())).thenReturn(existingComment);
         //Act & Assert
-        assertThrows(ForbiddenException.class, () ->
-                commentService.updateComment(
-                        existingComment.getCommentId(),
-                        wrongUserId,
-                        commentRequest)
+        assertThrows(
+                ForbiddenException.class, () ->
+                        commentService.updateComment(
+                                existingComment.getCommentId(),
+                                wrongUserId,
+                                commentRequest
+                        )
         );
 
         //Verify comment is never saved
@@ -73,7 +75,7 @@ class CommentServiceTest {
     void updateComment_ShouldUpdateComment_WhenUserIsOwner() {
 
 
-        when(commentRepository.findById(existingComment.getCommentId())).thenReturn(Optional.of(existingComment));
+        when(entityProvider.getCommentOrThrow(existingComment.getCommentId())).thenReturn(existingComment);
         UpdateCommentResponse mockResponse = new UpdateCommentResponse(
                 commentRequest.text(), LocalDateTime.now());
         when(commentMapper.toUpdateCommentResponse(existingComment)).thenReturn(mockResponse);
@@ -97,11 +99,12 @@ class CommentServiceTest {
     void updateComment_ShouldThrowNotFound_WhenCommentIsNotFound() {
         //Arrange
         Long nonExistingCommentId = 99L;
-        when(commentRepository.findById(nonExistingCommentId)).thenReturn(Optional.empty());
-
+        when(entityProvider.getCommentOrThrow(nonExistingCommentId)).thenThrow(new NotFoundException());
         //Act & Assert
-        assertThrows(NotFoundException.class, () -> commentService.updateComment(
-                nonExistingCommentId, owner.getUserId(), commentRequest));
+        assertThrows(
+                NotFoundException.class, () -> commentService.updateComment(
+                        nonExistingCommentId, owner.getUserId(), commentRequest)
+        );
 
         //Verify comment is never saved and mapper is never used
         verifyNoInteractions(commentMapper);

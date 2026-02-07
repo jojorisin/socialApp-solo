@@ -37,7 +37,8 @@ public class FriendshipController {
             @AuthenticationPrincipal MyUserDetails userDetails
     ) {
 
-        return ResponseEntity.status(HttpStatus.CREATED).body(friendshipService.sendFriendRequest(userDetails.getUserId(), receiverId));
+        return ResponseEntity.status(HttpStatus.CREATED)
+                             .body(friendshipService.sendFriendRequest(userDetails.getUserId(), receiverId));
 
     }
 
@@ -90,25 +91,14 @@ public class FriendshipController {
     @DeleteMapping("{friendshipId}")
     public ResponseEntity<Void> deleteFriendship(
             @PathVariable Long friendshipId,
-            @AuthenticationPrincipal MyUserDetails userDetails) {
+            @AuthenticationPrincipal MyUserDetails userDetails
+    ) {
 
         friendshipService.deleteFriendship(friendshipId, userDetails.getUserId());
 
         return ResponseEntity.noContent().build();
 
     }
-/*
-    @GetMapping("/status/{targetUserId}")
-    public ResponseEntity<FriendshipStatusDTO> getFriendshipStatus(
-            @PathVariable Long targetUserId,
-            @AuthenticationPrincipal MyUserDetails userDetails) {
-        FriendshipStatusDTO statusDTO = friendshipService.getFriendshipStatus(currentUserId, targetUserId);
 
-        if (statusDTO == null) {
-            return ResponseEntity.noContent().build();
-        }
-
-        return ResponseEntity.ok(statusDTO);
-    }*/
 
 }

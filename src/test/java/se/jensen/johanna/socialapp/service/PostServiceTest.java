@@ -14,9 +14,9 @@ import se.jensen.johanna.socialapp.mapper.PostMapper;
 import se.jensen.johanna.socialapp.model.Post;
 import se.jensen.johanna.socialapp.model.User;
 import se.jensen.johanna.socialapp.repository.PostRepository;
+import se.jensen.johanna.socialapp.service.helper.EntityProvider;
 
 import java.time.LocalDateTime;
-import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -33,6 +33,8 @@ class PostServiceTest {
 
     @InjectMocks
     private PostService postService;
+    @Mock
+    private EntityProvider entityProvider;
 
     private Long postId;
     private Long userId;
@@ -60,10 +62,12 @@ class PostServiceTest {
     void updatePost_Success() {
         // Arrange
         UpdatePostResponse expectedResponse =
-                new UpdatePostResponse(postId, userId, "Updated content",
-                        existingPost.getCreatedAt(), LocalDateTime.now());
+                new UpdatePostResponse(
+                        postId, userId, "Updated content",
+                        existingPost.getCreatedAt(), LocalDateTime.now()
+                );
 
-        when(postRepository.findById(postId)).thenReturn(Optional.of(existingPost));
+        when(entityProvider.getPostOrThrow(postId)).thenReturn(existingPost);
         when(postMapper.toUpdatePostResponseDTO(existingPost)).thenReturn(expectedResponse);
 
         // Act
@@ -71,7 +75,7 @@ class PostServiceTest {
 
         // Assert
         assertNotNull(actualResponse);
-        verify(postRepository).findById(postId);
+        verify(entityProvider).getPostOrThrow(postId);
         verify(postMapper).updatePost(postRequest, existingPost);
         verify(postRepository).save(existingPost);
         verify(postMapper).toUpdatePostResponseDTO(existingPost);
@@ -80,11 +84,12 @@ class PostServiceTest {
     @Test
     void updatePost_ThrowsNotFoundException_WhenPostDoesNotExist() {
         // Arrange
-        when(postRepository.findById(postId)).thenReturn(Optional.empty());
+        when(entityProvider.getPostOrThrow(99L)).thenThrow(new NotFoundException());
 
         // Act & Assert
-        assertThrows(NotFoundException.class, () ->
-                postService.updatePost(postRequest, postId, userId)
+        assertThrows(
+                NotFoundException.class, () ->
+                        postService.updatePost(postRequest, 99L, userId)
         );
         verify(postRepository, never()).save(any());
     }
@@ -93,11 +98,13 @@ class PostServiceTest {
     void updatePost_ThrowsForbiddenException_WhenUserIsNotAuthor() {
         // Arrange
         Long wrongUserId = 99L;
-        when(postRepository.findById(postId)).thenReturn(Optional.of(existingPost));
+        // when(postRepository.findById(postId)).thenReturn(Optional.of(existingPost));
+        when(entityProvider.getPostOrThrow(postId)).thenReturn(existingPost);
 
         // Act & Assert
-        assertThrows(ForbiddenException.class, () ->
-                postService.updatePost(postRequest, postId, wrongUserId)
+        assertThrows(
+                ForbiddenException.class, () ->
+                        postService.updatePost(postRequest, postId, wrongUserId)
         );
         verify(postRepository, never()).save(any());
     }
